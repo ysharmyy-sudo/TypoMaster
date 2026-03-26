@@ -144,7 +144,7 @@ setView('username');
 };
   const handlePayment = (price: number) => {
  const options = {
-  key: "rzp_test_STjUBXj5v6qYdO", // 🔥 apni test API key daal
+  key: "rzp_test_SVl54zdp8hFeMa", // 🔥 apni test API key daal
   amount: price * 100, // ₹499 (paise me hota hai)
   currency: "INR",
   name: "TypoMaster Pro",
