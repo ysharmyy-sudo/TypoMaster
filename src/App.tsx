@@ -118,7 +118,7 @@ export default function App() {
         unlockedLessons: 1
       };
 
-      await fetch("http://localhost:5000/api/auth/save", {
+      await fetch("https://https://typomaster-backend.onrender.com/api/auth/save", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
@@ -181,7 +181,7 @@ rzp.open();
   if (user && username) {
 
     // 🔥 backend me save
-    await fetch("http://localhost:5000/api/auth/update", {
+    await fetch("https://https://typomaster-backend.onrender.com/api/auth/update", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
