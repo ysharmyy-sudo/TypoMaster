@@ -1,23 +1,30 @@
-import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, FacebookAuthProvider } from "firebase/auth";
+// firebase.ts
 
-// 🔐 Firebase config
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+
+// ⚠️ IMPORTANT: sirf PUBLIC keys hi frontend me use hoti hain
 const firebaseConfig = {
-  apiKey: "AIzaSyBf-8ApKCsQH0T2dfUYS-UWlqlUNMOZPuw",
-  authDomain: "typomaster-e35fe.firebaseapp.com",
-  projectId: "typomaster-e35fe",
-  storageBucket: "typomaster-e35fe.firebasestorage.app",
-  messagingSenderId: "443174519704",
-  appId: "1:443174519704:web:bb5dea109c471d4d1f61ed",
-  measurementId: "G-Z4RL8HWEQ6"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-// 🚀 Initialize Firebase
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// 🔑 Auth export (IMPORTANT)
+// Auth
 export const auth = getAuth(app);
 
-// 🔑 Providers
-export const googleProvider = new GoogleAuthProvider();
-export const facebookProvider = new FacebookAuthProvider();
+// Export auth functions (VERY IMPORTANT ⚠️)
+export {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
+  FacebookAuthProvider,
+  sendEmailVerification,
+} from "firebase/auth";
