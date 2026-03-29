@@ -7,11 +7,12 @@ import {
   Shuffle, RefreshCw, Crown, Brain, Crosshair, Dumbbell,
   AlarmClock, Hash
 } from 'lucide-react';
-import { auth } from "./firebase";
+import { auth, googleProvider, facebookProvider } from "./firebase";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  sendEmailVerification
+  sendEmailVerification,
+  signInWithPopup
 } from "firebase/auth";
 
 // --- Types ---
@@ -797,7 +798,7 @@ export default function App() {
     if (user) localStorage.setItem('typomaster_user', JSON.stringify(user));
   }, [user]);
 
-  // ✅ FIREBASE AUTH — EXACT SAME AS ORIGINAL
+  // ✅ FIREBASE AUTH — EMAIL
   const handleAuth = async (email: string, password: string) => {
     try {
       if (authMode === 'signup') {
@@ -818,7 +819,6 @@ export default function App() {
           xp: 0, level: 1, wpm: 0, accuracy: 0,
           streak: 0, triesLeft: 3, isPremium: false, unlockedLessons: 1
         };
-        // ✅ BACKEND CALL — EXACT SAME
         await fetch("https://typomaster-backend.onrender.com/api/auth/save", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -834,7 +834,55 @@ export default function App() {
     }
   };
 
-  // ✅ RAZORPAY — EXACT SAME AS ORIGINAL
+  // ✅ CHANGE 1: GOOGLE LOGIN — Real Firebase Google login
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const firebaseUser = result.user;
+      const newUser: User = {
+        id: firebaseUser.uid,
+        email: firebaseUser.email || "",
+        provider: 'google',
+        xp: 0, level: 1, wpm: 0, accuracy: 0,
+        streak: 0, triesLeft: 3, isPremium: false, unlockedLessons: 1
+      };
+      await fetch("https://typomaster-backend.onrender.com/api/auth/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uid: newUser.id, email: newUser.email }),
+      });
+      setUser(newUser);
+      setView('username');
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  // ✅ CHANGE 2: FACEBOOK LOGIN — Real Firebase Facebook login
+  const handleFacebookLogin = async () => {
+    try {
+      const result = await signInWithPopup(auth, facebookProvider);
+      const firebaseUser = result.user;
+      const newUser: User = {
+        id: firebaseUser.uid,
+        email: firebaseUser.email || "",
+        provider: 'facebook',
+        xp: 0, level: 1, wpm: 0, accuracy: 0,
+        streak: 0, triesLeft: 3, isPremium: false, unlockedLessons: 1
+      };
+      await fetch("https://typomaster-backend.onrender.com/api/auth/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uid: newUser.id, email: newUser.email }),
+      });
+      setUser(newUser);
+      setView('username');
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  // ✅ RAZORPAY — EXACT SAME
   const handlePayment = (price: number) => {
     const options = {
       key: import.meta.env.RAZORPAY_KEY_ID,
@@ -853,7 +901,7 @@ export default function App() {
     rzp.open();
   };
 
-  // ✅ USERNAME SETUP — EXACT SAME + BACKEND CALL
+  // ✅ USERNAME SETUP — EXACT SAME
   const handleSetUsername = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -927,9 +975,10 @@ export default function App() {
         </div>
 
         <div className="space-y-4">
-          {/* ✅ GOOGLE BUTTON — real G SVG, white bg */}
+          {/* ✅ CHANGE 1: Google button — now calls handleGoogleLogin */}
           <button
             type="button"
+            onClick={handleGoogleLogin}
             className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium text-gray-800 shadow-sm"
           >
             <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
@@ -940,9 +989,11 @@ export default function App() {
             </svg>
             Continue with Google
           </button>
-          {/* ✅ FACEBOOK BUTTON — solid #1877F2 */}
+
+          {/* ✅ CHANGE 2: Facebook button — now calls handleFacebookLogin */}
           <button
             type="button"
+            onClick={handleFacebookLogin}
             className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-[#1877F2] hover:bg-[#166FE5] text-white rounded-xl transition-colors font-medium shadow-sm"
           >
             <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="white">
@@ -970,8 +1021,9 @@ export default function App() {
             <input required type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••"
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all" />
           </div>
+          {/* ✅ CHANGE 3: Start Typing button — now goes to dashboard after login */}
           <button type="submit" className="w-full bg-sky-600 text-white py-3 rounded-xl font-bold hover:bg-sky-700 transition-colors shadow-lg shadow-sky-200">
-            {authMode === 'login' ? 'Login' : 'Create Account'}
+            {authMode === 'login' ? 'Start Typing →' : 'Create Account'}
           </button>
         </form>
 
@@ -1022,7 +1074,6 @@ export default function App() {
             <Keyboard className="text-sky-600 w-8 h-8" />
             <span className="font-bold text-xl tracking-tight text-slate-900">TypoMaster</span>
           </div>
-          {/* Nav links */}
           <nav className="hidden md:flex items-center gap-1">
             {[
               { id: 'dashboard', label: 'Home' },
@@ -1089,7 +1140,6 @@ export default function App() {
           ))}
         </div>
 
-        {/* Quick access to games + exams */}
         <div className="grid grid-cols-2 gap-4 mb-8">
           <button onClick={() => setView('games')} className="bg-white border-2 border-purple-200 hover:border-purple-400 rounded-2xl p-5 text-left transition-all group">
             <Gamepad2 className="w-7 h-7 text-purple-500 mb-2 group-hover:scale-110 transition-transform" />
