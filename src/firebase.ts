@@ -1,5 +1,3 @@
-/ 🔥 Firebase Setup - CLEAN VERSION
-
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 
