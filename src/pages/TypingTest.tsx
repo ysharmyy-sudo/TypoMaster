@@ -216,7 +216,7 @@ const TypingTest = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 py-12 px-4 md:px-8">
-      <div className="max-w-4xl mx-auto">
+      <div className={`mx-auto transition-all duration-300 ${isHindi && showKeyboard ? 'max-w-7xl' : 'max-w-4xl'}`}>
 
         {/* ── Header ── */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -300,126 +300,123 @@ const TypingTest = () => {
           </div>
         )}
 
-        {/* ── Typing Test Box ── */}
-        <div className="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-xl border border-slate-100 mb-4 overflow-hidden">
-          {/* Passage display */}
-          <div
-            className="text-xl md:text-2xl leading-[1.8] mb-8 text-slate-300 font-medium relative min-h-[100px]"
-            style={{ fontFamily: isHindi ? 'sans-serif' : undefined }}
-          >
-            <div className="absolute inset-0 pointer-events-none z-10">
-              {text.split('').map((char, index) => {
-                let color = 'text-slate-300';
-                let underline = '';
-                if (index === userInput.length && !isFinished) {
-                  underline = 'border-b-4 border-sky-500 animate-pulse';
-                }
-                if (index < userInput.length) {
-                  color = userInput[index] === char
-                    ? 'text-slate-900'
-                    : 'text-red-600 bg-red-100 rounded-sm';
-                }
-                return (
-                  <span key={index} className={`${color} ${underline} transition-all duration-75`}>
-                    {char}
-                  </span>
-                );
-              })}
-            </div>
-            <div className="opacity-0">{text}</div>
-          </div>
+        {/* ── Two-column when keyboard open, single column otherwise ── */}
+        <div className={`${isHindi && showKeyboard ? 'grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6 items-start' : ''}`}>
 
-          {/* Textarea */}
-          <div className="relative">
-            <textarea
-              ref={inputRef}
-              value={userInput}
-              onChange={handleInputChange}
-              onPaste={(e) => e.preventDefault()}
-              disabled={isFinished}
-              autoFocus
-              lang={isHindi ? 'hi' : 'en'}
-              className="w-full h-40 p-6 bg-slate-50 border-2 border-slate-100 rounded-3xl focus:border-sky-500 focus:bg-white outline-none resize-none text-xl md:text-2xl leading-relaxed transition-all shadow-inner font-medium"
-              placeholder={isHindi ? 'यहाँ टाइप करना शुरू करें...' : 'The clock starts when you type your first letter...'}
-              style={{ fontFamily: isHindi ? 'sans-serif' : undefined }}
-            />
-            {!startTime && !isFinished && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="bg-sky-500 text-black px-6 py-2 rounded-full font-bold animate-bounce shadow-lg">
-                  {isHindi ? 'यहाँ क्लिक करें और टाइप शुरू करें!' : 'Click here and start typing!'}
+          {/* ── Left: Typing area ── */}
+          <div>
+            <div className="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-xl border border-slate-100 mb-4 overflow-hidden">
+              {/* Passage display */}
+              <div
+                className="text-xl md:text-2xl leading-[1.8] mb-8 text-slate-300 font-medium relative min-h-[100px]"
+                style={{ fontFamily: isHindi ? 'sans-serif' : undefined }}
+              >
+                <div className="absolute inset-0 pointer-events-none z-10">
+                  {text.split('').map((char, index) => {
+                    let color = 'text-slate-300';
+                    let underline = '';
+                    if (index === userInput.length && !isFinished) {
+                      underline = 'border-b-4 border-sky-500 animate-pulse';
+                    }
+                    if (index < userInput.length) {
+                      color = userInput[index] === char
+                        ? 'text-slate-900'
+                        : 'text-red-600 bg-red-100 rounded-sm';
+                    }
+                    return (
+                      <span key={index} className={`${color} ${underline} transition-all duration-75`}>
+                        {char}
+                      </span>
+                    );
+                  })}
                 </div>
+                <div className="opacity-0">{text}</div>
+              </div>
+
+              {/* Textarea */}
+              <textarea
+                ref={inputRef}
+                value={userInput}
+                onChange={handleInputChange}
+                onPaste={(e) => e.preventDefault()}
+                disabled={isFinished}
+                autoFocus
+                lang={isHindi ? 'hi' : 'en'}
+                className="w-full h-40 p-6 bg-slate-50 border-2 border-slate-100 rounded-3xl focus:border-sky-500 focus:bg-white outline-none resize-none text-xl md:text-2xl leading-relaxed transition-all shadow-inner font-medium"
+                placeholder={isHindi ? 'यहाँ टाइप करना शुरू करें...' : 'The clock starts when you type your first letter...'}
+                style={{ fontFamily: isHindi ? 'sans-serif' : undefined }}
+              />
+            </div>
+
+            {/* Controls row */}
+            <div className="flex justify-between items-center mb-6">
+              {!isPremium && (
+                <div className="flex items-center gap-2 text-amber-600 font-medium text-sm">
+                  <Zap size={16} />
+                  Free Trials: {3 - trialsUsed} left
+                </div>
+              )}
+              <div className="flex-1"></div>
+              <button
+                onClick={resetTest}
+                className="flex items-center gap-2 bg-slate-200 hover:bg-slate-300 text-slate-700 px-6 py-3 rounded-xl font-bold transition-all"
+              >
+                <RotateCcw size={18} /> Restart
+              </button>
+            </div>
+
+            {/* Result banner */}
+            {isFinished && (
+              <div className="mt-2 bg-sky-900 text-white p-8 rounded-3xl flex items-center justify-between">
+                <div>
+                  <h3 className="text-2xl font-bold mb-1">
+                    {isHindi ? 'शाबाश! बहुत अच्छा!' : 'Great Job!'}
+                  </h3>
+                  <p className="text-sky-200">
+                    You completed the test with <strong>{wpm} WPM</strong> and <strong>{accuracy}%</strong> accuracy.
+                  </p>
+                </div>
+                <button
+                  onClick={() => navigate('/exams')}
+                  className="bg-white text-black px-8 py-3 rounded-xl font-bold hover:bg-sky-100 transition-colors"
+                >
+                  Back to Exams
+                </button>
               </div>
             )}
           </div>
-        </div>
 
-        {/* ── Controls row ── */}
-        <div className="flex justify-between items-center mb-6">
-          {!isPremium && (
-            <div className="flex items-center gap-2 text-amber-600 font-medium text-sm">
-              <Zap size={16} />
-              Free Trials: {3 - trialsUsed} left
+          {/* ── Right: Keyboard (sticky alongside typing area) ── */}
+          {isHindi && showKeyboard && (
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm sticky top-24 self-start">
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h3 className="font-bold text-lg flex items-center gap-2">
+                    <Keyboard size={18} className="text-sky-500" /> Keyboard Reference
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Key par click karein — character bada dikhega
+                  </p>
+                </div>
+                <button
+                  onClick={() => navigate('/hindi-keyboard')}
+                  className="flex items-center gap-1.5 text-sky-600 hover:text-sky-800 text-sm font-bold transition-colors"
+                >
+                  <ExternalLink size={14} /> Pura Page
+                </button>
+              </div>
+              <HindiKeyboard
+                layout={hindiLayout}
+                onLayoutChange={(l) => {
+                  setHindiLayout(l);
+                  handleLanguageChange(l === 'inscript' ? 'inscript' : 'remington');
+                }}
+                showLayoutToggle={true}
+                compact={true}
+              />
             </div>
           )}
-          <div className="flex-1"></div>
-          <button
-            onClick={resetTest}
-            className="flex items-center gap-2 bg-slate-200 hover:bg-slate-300 text-slate-700 px-6 py-3 rounded-xl font-bold transition-all"
-          >
-            <RotateCcw size={18} /> Restart
-          </button>
         </div>
-
-        {/* ── Keyboard Panel (inline, collapsible) ── */}
-        {isHindi && showKeyboard && (
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 mb-6 shadow-sm">
-            <div className="flex items-center justify-between mb-5">
-              <div>
-                <h3 className="font-bold text-lg flex items-center gap-2">
-                  <Keyboard size={18} className="text-sky-500" /> Hindi Keyboard Reference
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Key par click karein — bada character panel mein dikhega
-                </p>
-              </div>
-              <button
-                onClick={() => navigate('/hindi-keyboard')}
-                className="flex items-center gap-1.5 text-sky-600 hover:text-sky-800 text-sm font-bold transition-colors"
-              >
-                <ExternalLink size={14} /> Pura Page
-              </button>
-            </div>
-            <HindiKeyboard
-              layout={hindiLayout}
-              onLayoutChange={(l) => {
-                setHindiLayout(l);
-                handleLanguageChange(l === 'inscript' ? 'inscript' : 'remington');
-              }}
-              showLayoutToggle={true}
-              compact={true}
-            />
-          </div>
-        )}
-
-        {/* ── Result banner ── */}
-        {isFinished && (
-          <div className="mt-2 bg-sky-900 text-white p-8 rounded-3xl flex items-center justify-between">
-            <div>
-              <h3 className="text-2xl font-bold mb-1">
-                {isHindi ? 'शाबाश! बहुत अच्छा!' : 'Great Job!'}
-              </h3>
-              <p className="text-sky-200">
-                You completed the test with <strong>{wpm} WPM</strong> and <strong>{accuracy}%</strong> accuracy.
-              </p>
-            </div>
-            <button
-              onClick={() => navigate('/exams')}
-              className="bg-white text-black px-8 py-3 rounded-xl font-bold hover:bg-sky-100 transition-colors"
-            >
-              Back to Exams
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );
