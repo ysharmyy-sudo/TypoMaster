@@ -10,6 +10,7 @@ import Exams from './pages/Exams';
 import Tests from './pages/Tests';
 import Games from './pages/Games';
 import Pricing from './pages/Pricing';
+import HindiKeyboardPage from './pages/HindiKeyboardPage';
 
 const Footer = () => (
   <footer className="bg-black text-white py-12 px-8">
@@ -71,6 +72,7 @@ const MainContent = () => {
           <Route path="/exams" element={<Exams />} />
           <Route path="/games" element={<Games />} />
           <Route path="/pricing" element={<Pricing />} />
+          <Route path="/hindi-keyboard" element={<HindiKeyboardPage />} />
           <Route path="*" element={<Home />} />
         </Routes>
       </main>
