@@ -216,7 +216,7 @@ const TypingTest = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 py-12 px-4 md:px-8">
-      <div className={`mx-auto transition-all duration-300 ${isHindi && showKeyboard ? 'max-w-7xl' : 'max-w-4xl'}`}>
+      <div className={`mx-auto transition-all duration-300 ${isHindi && showKeyboard ? 'max-w-[1400px]' : 'max-w-4xl'}`}>
 
         {/* ── Header ── */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -301,7 +301,7 @@ const TypingTest = () => {
         )}
 
         {/* ── Two-column when keyboard open, single column otherwise ── */}
-        <div className={`${isHindi && showKeyboard ? 'grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6 items-start' : ''}`}>
+        <div className={`${isHindi && showKeyboard ? 'grid grid-cols-1 xl:grid-cols-[1fr_620px] gap-6 items-start' : ''}`}>
 
           {/* ── Left: Typing area ── */}
           <div>
@@ -388,7 +388,7 @@ const TypingTest = () => {
 
           {/* ── Right: Keyboard (sticky alongside typing area) ── */}
           {isHindi && showKeyboard && (
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm sticky top-24 self-start">
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm sticky top-24 self-start overflow-x-auto">
               <div className="flex items-center justify-between mb-5">
                 <div>
                   <h3 className="font-bold text-lg flex items-center gap-2">
