@@ -12,15 +12,16 @@
     "compression": "^1.8.0",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
-    "express": "^5.2.1",
+    "express": "^4.19.2",
     "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^7.5.0",
+    "firebase-admin": "^13.5.0",
     "helmet": "^8.1.0",
     "hpp": "^0.2.3",
-    "firebase-admin": "^13.5.0",
     "mongodb": "^7.1.1",
     "mongoose": "^8.23.0",
-    "razorpay": "^2.9.6"
+    "razorpay": "^2.9.6",
+    "react-vite-tailwind": "file:.."
   },
   "devDependencies": {
     "nodemon": "^3.0.0"
