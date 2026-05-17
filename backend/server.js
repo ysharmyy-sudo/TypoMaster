@@ -3,7 +3,6 @@ const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const mongoSanitize = require("express-mongo-sanitize");
-const hpp = require("hpp");
 const compression = require("compression");
 require("dotenv").config();
 
@@ -25,7 +24,6 @@ connectDB();
 // ✅ Middlewares
 app.use(cors());
 app.use(helmet());
-app.use(hpp());
 app.use(mongoSanitize());
 app.use(compression());
 
