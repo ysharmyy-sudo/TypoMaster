@@ -11,6 +11,7 @@ import Tests from './pages/Tests';
 import Games from './pages/Games';
 import Pricing from './pages/Pricing';
 import HindiKeyboardPage from './pages/HindiKeyboardPage';
+import Tournament from './pages/Tournament';
 
 const Footer = () => (
   <footer className="bg-black text-white py-12 px-8">
@@ -73,6 +74,7 @@ const MainContent = () => {
           <Route path="/games" element={<Games />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/hindi-keyboard" element={<HindiKeyboardPage />} />
+          <Route path="/tournament" element={<Tournament />} />
           <Route path="*" element={<Home />} />
         </Routes>
       </main>

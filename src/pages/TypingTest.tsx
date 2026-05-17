@@ -5,6 +5,14 @@ import { PageSkeleton } from '../components/SkeletonLoader';
 import { RotateCcw, Zap, AlertCircle, Keyboard, X, ExternalLink } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import HindiKeyboard, { type HindiLayout } from '../components/HindiKeyboard';
+import VirtualKeyboard from '../components/VirtualKeyboard';
+import {
+  TYPING_LANGUAGE_OPTIONS,
+  type TypingLanguage,
+  getLanguageOption,
+  getVirtualKeyboardLayout,
+  makeDefaultPracticeText,
+} from '../constants/typingLanguages';
 
 // ─── Text Banks ─────────────────────────────────────────────────────────────
 
@@ -46,7 +54,7 @@ const HINDI_TEXTS: string[] = [
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type Language = 'english' | 'inscript' | 'remington';
+type Language = TypingLanguage;
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -70,7 +78,11 @@ const TypingTest = () => {
   const [isFinished, setIsFinished] = useState(false);
   const [timeLeft, setTimeLeft] = useState(60);
   const [trialError, setTrialError] = useState(false);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const langOption = getLanguageOption(language);
+  const isHindi = language === 'hindi_inscript' || language === 'hindi_remington';
+  const isNonEnglish = language !== 'english';
 
   // ── Init ──
   useEffect(() => {
@@ -81,6 +93,7 @@ const TypingTest = () => {
 
     if (title) setExamTitle(title);
 
+    // Default = English (same behaviour as earlier)
     let selectedText = '';
     if (gameId) {
       selectedText = "The game mode is active. Focus on every character to master the speed challenge!";
@@ -99,6 +112,7 @@ const TypingTest = () => {
 
   // ── Language change ──
   const handleLanguageChange = (lang: Language) => {
+    const nextOpt = getLanguageOption(lang);
     setLanguage(lang);
     setUserInput('');
     setStartTime(null);
@@ -108,14 +122,23 @@ const TypingTest = () => {
     setTimeLeft(60);
     setTrialError(false);
 
+    // Update title for non-english languages (helps users confirm selection)
     if (lang === 'english') {
+      setExamTitle('Standard Practice');
       const texts = ENGLISH_TEXTS['default'];
       setText(texts[Math.floor(Math.random() * texts.length)]);
       setShowKeyboard(false);
     } else {
-      setText(HINDI_TEXTS[Math.floor(Math.random() * HINDI_TEXTS.length)]);
-      if (lang === 'inscript') setHindiLayout('inscript');
-      else setHindiLayout('remington');
+      setExamTitle(`${nextOpt.label} Practice`);
+      // Auto-open virtual keyboard for better UX on mobile / for uncommon scripts
+      setShowKeyboard(true);
+
+      if (lang === 'hindi_inscript' || lang === 'hindi_remington') {
+        setText(HINDI_TEXTS[Math.floor(Math.random() * HINDI_TEXTS.length)]);
+        setHindiLayout(lang === 'hindi_inscript' ? 'inscript' : 'remington');
+      } else {
+        setText(makeDefaultPracticeText(lang));
+      }
     }
   };
 
@@ -183,8 +206,10 @@ const TypingTest = () => {
       const randomKey = keys[Math.floor(Math.random() * keys.length)];
       const texts = ENGLISH_TEXTS[randomKey];
       setText(texts[Math.floor(Math.random() * texts.length)]);
-    } else {
+    } else if (isHindi) {
       setText(HINDI_TEXTS[Math.floor(Math.random() * HINDI_TEXTS.length)]);
+    } else {
+      setText(makeDefaultPracticeText(language));
     }
   };
 
@@ -212,11 +237,11 @@ const TypingTest = () => {
     );
   }
 
-  const isHindi = language !== 'english';
+  const keyboardPanelTitle = isHindi ? 'Keyboard Reference (Hindi)' : 'Virtual Keyboard';
 
   return (
     <div className="min-h-screen bg-slate-50 py-12 px-4 md:px-8">
-      <div className={`mx-auto transition-all duration-300 ${isHindi && showKeyboard ? 'max-w-[1400px]' : 'max-w-4xl'}`}>
+      <div className={`mx-auto transition-all duration-300 ${isNonEnglish && showKeyboard ? 'max-w-[1400px]' : 'max-w-4xl'}`}>
 
         {/* ── Header ── */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -243,35 +268,30 @@ const TypingTest = () => {
         </div>
 
         {/* ── Language Toggle Bar ── */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-2 mb-6 flex flex-wrap items-center gap-2">
+        <div className="bg-white border border-slate-200 rounded-2xl p-3 mb-6 flex flex-wrap items-center gap-3">
           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider px-2 hidden md:block">भाषा / Language</span>
-          
-          {[
-            { id: 'english' as Language, label: 'English', sub: 'SSC / IBPS' },
-            { id: 'inscript' as Language, label: 'हिंदी — Inscript', sub: 'Mangal / Unicode' },
-            { id: 'remington' as Language, label: 'हिंदी — Remington', sub: 'Krutidev / State' },
-          ].map((lang) => (
-            <button
-              key={lang.id}
-              onClick={() => handleLanguageChange(lang.id)}
-              className={`flex-1 md:flex-none flex flex-col items-center px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                language === lang.id
-                  ? 'bg-black text-white shadow-lg'
-                  : 'text-slate-500 hover:bg-slate-100'
-              }`}
+          <div className="flex-1 md:flex-none min-w-[240px]">
+            <select
+              value={language}
+              onChange={(e) => handleLanguageChange(e.target.value as TypingLanguage)}
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent outline-none font-bold text-slate-800"
             >
-              {lang.label}
-              <span className={`text-[10px] font-normal mt-0.5 ${language === lang.id ? 'text-slate-400' : 'text-slate-400'}`}>
-                {lang.sub}
-              </span>
-            </button>
-          ))}
+              {TYPING_LANGUAGE_OPTIONS.map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <p className="text-[11px] text-slate-400 mt-1 px-1">
+              Selected script: <span className="font-semibold">{langOption.sub}</span>
+            </p>
+          </div>
 
-          {/* Keyboard reference button — only for Hindi */}
-          {isHindi && (
+          {/* Keyboard toggle — for any non-English language */}
+          {isNonEnglish && (
             <button
               onClick={() => setShowKeyboard(s => !s)}
-              className={`ml-auto flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold border-2 transition-all ${
+              className={`ml-auto flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-bold border-2 transition-all ${
                 showKeyboard
                   ? 'bg-sky-500 border-sky-500 text-black'
                   : 'border-sky-200 text-sky-600 hover:bg-sky-50'
@@ -288,7 +308,7 @@ const TypingTest = () => {
           <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-3 mb-6 flex items-center justify-between gap-4">
             <p className="text-sm text-amber-800 font-medium">
               ⚠️ Hindi typing ke liye apne system mein{' '}
-              <strong>{language === 'inscript' ? 'Inscript (Mangal)' : 'Remington Gail (Krutidev)'}</strong>{' '}
+              <strong>{language === 'hindi_inscript' ? 'Inscript (Mangal)' : 'Remington Gail (Krutidev)'}</strong>{' '}
               layout enable hona chahiye. Windows: Settings → Time & Language → Language → Hindi → Options
             </p>
             <button
@@ -301,7 +321,7 @@ const TypingTest = () => {
         )}
 
         {/* ── Two-column when keyboard open, single column otherwise ── */}
-        <div className={`${isHindi && showKeyboard ? 'grid grid-cols-1 xl:grid-cols-[1fr_620px] gap-6 items-start' : ''}`}>
+        <div className={`${isNonEnglish && showKeyboard ? 'grid grid-cols-1 xl:grid-cols-[1fr_620px] gap-6 items-start' : ''}`}>
 
           {/* ── Left: Typing area ── */}
           <div>
@@ -341,7 +361,8 @@ const TypingTest = () => {
                 onPaste={(e) => e.preventDefault()}
                 disabled={isFinished}
                 autoFocus
-                lang={isHindi ? 'hi' : 'en'}
+                lang={langOption.langTag}
+                dir={langOption.dir}
                 className="w-full h-40 p-6 bg-slate-50 border-2 border-slate-100 rounded-3xl focus:border-sky-500 focus:bg-white outline-none resize-none text-xl md:text-2xl leading-relaxed transition-all shadow-inner font-medium"
                 placeholder={isHindi ? 'यहाँ टाइप करना शुरू करें...' : 'The clock starts when you type your first letter...'}
                 style={{ fontFamily: isHindi ? 'sans-serif' : undefined }}
@@ -387,33 +408,60 @@ const TypingTest = () => {
           </div>
 
           {/* ── Right: Keyboard (sticky alongside typing area) ── */}
-          {isHindi && showKeyboard && (
+          {isNonEnglish && showKeyboard && (
             <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm sticky top-24 self-start overflow-x-auto">
               <div className="flex items-center justify-between mb-5">
                 <div>
                   <h3 className="font-bold text-lg flex items-center gap-2">
-                    <Keyboard size={18} className="text-sky-500" /> Keyboard Reference
+                    <Keyboard size={18} className="text-sky-500" /> {keyboardPanelTitle}
                   </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Key par click karein — character bada dikhega
+                    Key par click karein — character type hoga (cursor position par)
                   </p>
                 </div>
-                <button
-                  onClick={() => navigate('/hindi-keyboard')}
-                  className="flex items-center gap-1.5 text-sky-600 hover:text-sky-800 text-sm font-bold transition-colors"
-                >
-                  <ExternalLink size={14} /> Pura Page
-                </button>
+                {isHindi && (
+                  <button
+                    onClick={() => navigate('/hindi-keyboard')}
+                    className="flex items-center gap-1.5 text-sky-600 hover:text-sky-800 text-sm font-bold transition-colors"
+                  >
+                    <ExternalLink size={14} /> Pura Page
+                  </button>
+                )}
               </div>
-              <HindiKeyboard
-                layout={hindiLayout}
-                onLayoutChange={(l) => {
-                  setHindiLayout(l);
-                  handleLanguageChange(l === 'inscript' ? 'inscript' : 'remington');
-                }}
-                showLayoutToggle={true}
-                compact={true}
-              />
+
+              {isHindi ? (
+                <HindiKeyboard
+                  layout={hindiLayout}
+                  onLayoutChange={(l) => {
+                    setHindiLayout(l);
+                    handleLanguageChange(l === 'inscript' ? 'hindi_inscript' : 'hindi_remington');
+                  }}
+                  showLayoutToggle={true}
+                  compact={true}
+                />
+              ) : (
+                <VirtualKeyboard
+                  value={userInput}
+                  onChange={(next) => {
+                    // Re-use same accuracy logic: easiest is to just update input value and let effect calculate on next change
+                    // We intentionally route via a synthetic event-equivalent path.
+                    setUserInput(next);
+
+                    const charCount = next.length;
+                    let correctChars = 0;
+                    for (let i = 0; i < charCount; i++) {
+                      if (next[i] === text[i]) correctChars++;
+                    }
+                    setAccuracy(charCount === 0 ? 100 : Math.round((correctChars / charCount) * 100));
+
+                    if (!startTime && next.length > 0) handleStart();
+                    if (next === text || next.length >= text.length) handleFinish();
+                  }}
+                  textareaRef={inputRef}
+                  layout={getVirtualKeyboardLayout(language)}
+                  rtl={langOption.dir === 'rtl'}
+                />
+              )}
             </div>
           )}
         </div>

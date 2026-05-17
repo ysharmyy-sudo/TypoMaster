@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Trophy, Clock, Users, MapPin, Calendar, ChevronRight,
@@ -434,7 +435,7 @@ const Tournament = () => {
               { id: 'register', label: 'Register', icon: <Shield size={16} /> },
               { id: 'champions', label: 'State Champions', icon: <Medal size={16} /> },
               { id: 'finals', label: 'Grand Finale', icon: <Crown size={16} /> },
-            ] as { id: Tab; label: string; icon: React.ReactNode }[]).map((t) => (
+            ] as { id: Tab; label: string; icon: ReactNode }[]).map((t) => (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}

@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Keyboard, Gamepad2, User, LogOut } from 'lucide-react';
+import { Keyboard, Gamepad2, Trophy, User, LogOut } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 
 const Navbar = () => {
@@ -23,6 +23,9 @@ const Navbar = () => {
       <div className="hidden md:flex items-center space-x-8 font-medium">
         <Link to="/exams" className="hover:text-sky-400 transition-colors">Exams</Link>
         <Link to="/tests" className="hover:text-sky-400 transition-colors">Test</Link>
+        <Link to="/tournament" className="hover:text-sky-400 transition-colors flex items-center gap-2">
+          <Trophy size={18} /> Tournament
+        </Link>
         <Link to="/games" className="hover:text-sky-400 transition-colors flex items-center gap-2">
           <Gamepad2 size={18} /> Games
         </Link>
