@@ -17,14 +17,18 @@ const verifyHmac = (body, expected, secret) => {
 };
 
 // ✅ Server-side pricing (prevents tampering)
+// Subscription durations requested:
+// 1 month: ₹99, 3 months: ₹199, 6 months: ₹499, 12 months: ₹999
 const PLAN_PRICING = {
-  pro: { amount: 299, currency: "INR", premiumDays: 30 },
-  lifetime: { amount: 999, currency: "INR", premiumDays: null },
+  m1: { amount: 99, currency: "INR", premiumDays: 30 },
+  m3: { amount: 199, currency: "INR", premiumDays: 90 },
+  m6: { amount: 499, currency: "INR", premiumDays: 180 },
+  m12: { amount: 999, currency: "INR", premiumDays: 365 },
 };
 
 exports.createOrder = async (req, res) => {
   try {
-    const { plan = "lifetime" } = req.body || {};
+    const { plan = "m1" } = req.body || {};
     const user = req.user;
     const pricing = PLAN_PRICING[plan];
     if (!pricing) return res.status(400).json({ success: false, message: "Invalid plan" });
@@ -75,8 +79,8 @@ exports.verifyOrderPayment = async (req, res) => {
 
     const existing = await Payment.findOne({ razorpayOrderId: razorpay_order_id });
     if (!existing) return res.status(404).json({ success: false, message: "Order not found" });
-    const plan = existing.plan || "lifetime";
-    const pricing = PLAN_PRICING[plan] || PLAN_PRICING.lifetime;
+    const plan = existing.plan || "m1";
+    const pricing = PLAN_PRICING[plan] || PLAN_PRICING.m1;
 
     const body = razorpay_order_id + "|" + razorpay_payment_id;
 
@@ -94,7 +98,7 @@ exports.verifyOrderPayment = async (req, res) => {
       { new: true }
     );
 
-    // Premium activation (lifetime order)
+    // Premium activation
     const user = await User.findById(req.user._id);
     user.isPremium = true;
     user.premiumPlan = plan;
@@ -134,7 +138,7 @@ exports.verifySubscriptionPayment = async (req, res) => {
 // ✅ Payment Links (no frontend key required)
 exports.createPaymentLink = async (req, res) => {
   try {
-    const { plan = "lifetime" } = req.body || {};
+    const { plan = "m1" } = req.body || {};
     const pricing = PLAN_PRICING[plan];
     if (!pricing) return res.status(400).json({ success: false, message: "Invalid plan" });
     const user = req.user;
@@ -189,8 +193,8 @@ exports.confirmPaymentLink = async (req, res) => {
     if (status === "paid") {
       const user = await User.findById(req.user._id);
       user.isPremium = true;
-      user.premiumPlan = (link?.notes && link.notes.plan) || "lifetime";
-      const pricing = PLAN_PRICING[user.premiumPlan] || PLAN_PRICING.lifetime;
+      user.premiumPlan = (link?.notes && link.notes.plan) || "m1";
+      const pricing = PLAN_PRICING[user.premiumPlan] || PLAN_PRICING.m1;
       user.premiumUntil = pricing.premiumDays ? nowPlusDays(pricing.premiumDays) : null;
       await user.save();
       return res.json({ success: true, paid: true, user: { isPremium: user.isPremium, premiumPlan: user.premiumPlan } });

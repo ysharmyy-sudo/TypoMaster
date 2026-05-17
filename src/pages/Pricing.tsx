@@ -9,7 +9,9 @@ const Pricing = () => {
   const { setPremium } = useAppContext();
   const navigate = useNavigate();
   const [error, setError] = useState('');
-  const [loadingPlan, setLoadingPlan] = useState<null | 'pro' | 'lifetime'>(null);
+  type PaidPlanId = 'm1' | 'm3' | 'm6' | 'm12';
+  type PlanId = 'free' | PaidPlanId;
+  const [loadingPlan, setLoadingPlan] = useState<null | PaidPlanId>(null);
 
   // Razorpay key_id (public) can be exposed; key_secret must remain on backend.
   const loadRazorpay = () =>
@@ -22,7 +24,7 @@ const Pricing = () => {
       document.body.appendChild(script);
     });
 
-  const startPayment = async (plan: 'pro' | 'lifetime') => {
+  const startPayment = async (plan: PaidPlanId) => {
     try {
       setError('');
       setLoadingPlan(plan);
@@ -49,7 +51,14 @@ const Pricing = () => {
         amount: res.order.amount,
         currency: res.order.currency,
         name: 'Pariksha Typing Tutor',
-        description: plan === 'pro' ? 'Pro Aspirant (Monthly)' : 'Lifetime Master (One-time)',
+        description:
+          plan === 'm1'
+            ? 'Premium (1 Month)'
+            : plan === 'm3'
+            ? 'Premium (3 Months)'
+            : plan === 'm6'
+            ? 'Premium (6 Months)'
+            : 'Premium (12 Months)',
         order_id: res.order.id,
         prefill: {
           name: user.displayName || (user.email ? user.email.split('@')[0] : ''),
@@ -91,7 +100,15 @@ const Pricing = () => {
     }
   };
 
-  const plans = [
+  const plans: Array<{
+    id: PlanId;
+    name: string;
+    price: string;
+    period?: string;
+    features: string[];
+    cta: string;
+    highlight: boolean;
+  }> = [
     {
       id: 'free' as const,
       name: 'Free Starter',
@@ -106,9 +123,9 @@ const Pricing = () => {
       highlight: false,
     },
     {
-      id: 'pro' as const,
-      name: 'Pro Aspirant',
-      price: '₹299',
+      id: 'm1' as const,
+      name: 'Premium 1 Month',
+      price: '₹99',
       period: '/month',
       features: [
         'Unlimited Typing Practice',
@@ -117,24 +134,54 @@ const Pricing = () => {
         'Detailed Error Analytics',
         'PDF Performance Reports',
       ],
-      cta: 'Upgrade to Pro',
+      cta: 'Buy 1 Month',
       highlight: true,
     },
     {
-      id: 'lifetime' as const,
-      name: 'Lifetime Master',
-      price: '₹999',
-      period: 'one-time',
+      id: 'm3' as const,
+      name: 'Premium 3 Months',
+      price: '₹199',
+      period: '/3 months',
       features: [
-        'Everything in Pro Plan',
+        'Everything in Premium',
         'Priority Support',
         'Hindi & English Typing',
         'Ad-free Experience',
         'Mock Exam Series',
       ],
-      cta: 'Get Lifetime Access',
+      cta: 'Buy 3 Months',
       highlight: false,
-    }
+    },
+    {
+      id: 'm6' as const,
+      name: 'Premium 6 Months',
+      price: '₹499',
+      period: '/6 months',
+      features: [
+        'Everything in Premium',
+        'Priority Support',
+        'Hindi & English Typing',
+        'Ad-free Experience',
+        'Mock Exam Series',
+      ],
+      cta: 'Buy 6 Months',
+      highlight: false,
+    },
+    {
+      id: 'm12' as const,
+      name: 'Premium 12 Months',
+      price: '₹999',
+      period: '/12 months',
+      features: [
+        'Everything in Premium',
+        'Priority Support',
+        'Hindi & English Typing',
+        'Ad-free Experience',
+        'Mock Exam Series',
+      ],
+      cta: 'Buy 12 Months',
+      highlight: false,
+    },
   ];
 
   return (
