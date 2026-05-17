@@ -1,19 +1,99 @@
 import { Check, ShieldCheck } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { apiPost } from '../utils/api';
+import { auth } from '../firebase';
 
 const Pricing = () => {
   const { setPremium } = useAppContext();
   const navigate = useNavigate();
+  const [error, setError] = useState('');
+  const [loadingPlan, setLoadingPlan] = useState<null | 'pro' | 'lifetime'>(null);
 
-  const handleUpgrade = () => {
-    setPremium(true);
-    alert('Thank you for upgrading! You now have unlimited access.');
-    navigate('/');
+  // Razorpay key_id (public) can be exposed; key_secret must remain on backend.
+  const loadRazorpay = () =>
+    new Promise<boolean>((resolve) => {
+      if ((window as any).Razorpay) return resolve(true);
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+
+  const startPayment = async (plan: 'pro' | 'lifetime') => {
+    try {
+      setError('');
+      setLoadingPlan(plan);
+
+      // User must be logged-in because backend verifies Firebase ID token
+      if (!auth.currentUser) {
+        navigate('/login');
+        return;
+      }
+
+      const ok = await loadRazorpay();
+      if (!ok) throw new Error('Razorpay SDK load nahi ho paya. Internet check karo.');
+
+      // Create order on backend (amount is computed server-side)
+      const res = await apiPost<{ success: boolean; order: any; keyId: string; message?: string }>(
+        '/api/payment/create-order',
+        { plan }
+      );
+      if (!res?.success) throw new Error(res?.message || 'Order create failed');
+
+      const user = auth.currentUser;
+      const options = {
+        key: res.keyId, // safe/public
+        amount: res.order.amount,
+        currency: res.order.currency,
+        name: 'Pariksha Typing Tutor',
+        description: plan === 'pro' ? 'Pro Aspirant (Monthly)' : 'Lifetime Master (One-time)',
+        order_id: res.order.id,
+        prefill: {
+          name: user.displayName || (user.email ? user.email.split('@')[0] : ''),
+          email: user.email || '',
+        },
+        notes: {
+          plan,
+        },
+        theme: { color: '#0ea5e9' },
+        handler: async (response: any) => {
+          // Verify signature on backend (key_secret stays server-side)
+          const v = await apiPost<{ success: boolean; message?: string; user?: any }>(
+            '/api/payment/verify-order',
+            {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            }
+          );
+          if (!v?.success) throw new Error(v?.message || 'Payment verification failed');
+
+          setPremium(true);
+          navigate('/');
+        },
+        modal: {
+          ondismiss: () => setLoadingPlan(null),
+        },
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on('payment.failed', (resp: any) => {
+        setError(resp?.error?.description || 'Payment failed');
+      });
+      rzp.open();
+    } catch (e: any) {
+      setError(e?.message || 'Payment error');
+    } finally {
+      setLoadingPlan(null);
+    }
   };
 
   const plans = [
     {
+      id: 'free' as const,
       name: 'Free Starter',
       price: '₹0',
       features: [
@@ -26,6 +106,7 @@ const Pricing = () => {
       highlight: false,
     },
     {
+      id: 'pro' as const,
       name: 'Pro Aspirant',
       price: '₹299',
       period: '/month',
@@ -40,6 +121,7 @@ const Pricing = () => {
       highlight: true,
     },
     {
+      id: 'lifetime' as const,
       name: 'Lifetime Master',
       price: '₹999',
       period: 'one-time',
@@ -65,6 +147,12 @@ const Pricing = () => {
           </p>
         </div>
 
+        {error && (
+          <div className="max-w-2xl mx-auto mb-8 bg-red-50 border border-red-200 text-red-700 text-sm rounded-2xl px-5 py-4">
+            {error}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {plans.map((plan, i) => (
             <div 
@@ -74,7 +162,6 @@ const Pricing = () => {
                   ? 'border-sky-500 shadow-2xl shadow-sky-100 scale-105 relative z-10 bg-white' 
                   : 'border-slate-100 bg-slate-50 hover:border-sky-200'
               }`}
-              onClick={() => plan.price !== '₹0' && handleUpgrade()}
             >
               {plan.highlight && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-sky-500 text-black px-4 py-1 rounded-full text-xs font-bold uppercase">
@@ -99,6 +186,11 @@ const Pricing = () => {
               </ul>
 
               <button 
+                onClick={() => {
+                  if (plan.id === 'free') return;
+                  void startPayment(plan.id);
+                }}
+                disabled={plan.id === 'free' || loadingPlan === plan.id}
                 className={`w-full py-4 rounded-xl font-bold transition-all ${
                   plan.highlight 
                     ? 'bg-sky-500 text-black group-hover:bg-sky-400' 
@@ -107,7 +199,7 @@ const Pricing = () => {
                       : 'bg-black text-white group-hover:bg-slate-800'
                 }`}
               >
-                {plan.cta}
+                {loadingPlan === plan.id ? 'Opening payment...' : plan.cta}
               </button>
             </div>
           ))}

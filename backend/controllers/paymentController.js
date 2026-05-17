@@ -16,17 +16,25 @@ const verifyHmac = (body, expected, secret) => {
   return crypto.timingSafeEqual(Buffer.from(actual), Buffer.from(expected));
 };
 
+// ✅ Server-side pricing (prevents tampering)
+const PLAN_PRICING = {
+  pro: { amount: 299, currency: "INR", premiumDays: 30 },
+  lifetime: { amount: 999, currency: "INR", premiumDays: null },
+};
+
 exports.createOrder = async (req, res) => {
   try {
-    if (!req.user?.emailVerified) {
-      return res.status(403).json({ success: false, message: "Please verify your email in Firebase before making payment." });
-    }
-    const { amount, plan = "lifetime" } = req.body;
+    const { plan = "lifetime" } = req.body || {};
     const user = req.user;
+    const pricing = PLAN_PRICING[plan];
+    if (!pricing) return res.status(400).json({ success: false, message: "Invalid plan" });
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      return res.status(500).json({ success: false, message: "Razorpay is not configured (missing keys)" });
+    }
 
     const options = {
-      amount: amount * 100,
-      currency: "INR",
+      amount: Number(pricing.amount) * 100,
+      currency: pricing.currency,
       receipt: `rcpt_${Date.now()}`,
       notes: {
         userId: String(user._id),
@@ -39,14 +47,15 @@ exports.createOrder = async (req, res) => {
     await Payment.create({
       userId: user._id,
       plan,
-      amount,
-      currency: "INR",
+      amount: Number(pricing.amount),
+      currency: pricing.currency,
       status: "created",
       razorpayOrderId: order.id,
       raw: order,
     });
 
-    res.json({ success: true, order });
+    // ✅ key_id is safe to expose; never expose key_secret.
+    res.json({ success: true, order, keyId: process.env.RAZORPAY_KEY_ID });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -54,28 +63,33 @@ exports.createOrder = async (req, res) => {
 
 exports.verifyOrderPayment = async (req, res) => {
   try {
-    if (!req.user?.emailVerified) {
-      return res.status(403).json({ success: false, message: "Please verify your email in Firebase before making payment." });
-    }
     const {
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature,
-      plan = "lifetime",
     } = req.body;
+
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return res.status(400).json({ success: false, message: "Missing payment fields" });
+    }
+
+    const existing = await Payment.findOne({ razorpayOrderId: razorpay_order_id });
+    if (!existing) return res.status(404).json({ success: false, message: "Order not found" });
+    const plan = existing.plan || "lifetime";
+    const pricing = PLAN_PRICING[plan] || PLAN_PRICING.lifetime;
 
     const body = razorpay_order_id + "|" + razorpay_payment_id;
 
     const ok = verifyHmac(body, razorpay_signature, process.env.RAZORPAY_KEY_SECRET);
     if (!ok) return res.status(400).json({ success: false, message: "Invalid signature" });
 
+    // Idempotent update
     const payment = await Payment.findOneAndUpdate(
       { razorpayOrderId: razorpay_order_id },
       {
         razorpayPaymentId: razorpay_payment_id,
         razorpaySignature: razorpay_signature,
         status: "paid",
-        plan,
       },
       { new: true }
     );
@@ -84,7 +98,7 @@ exports.verifyOrderPayment = async (req, res) => {
     const user = await User.findById(req.user._id);
     user.isPremium = true;
     user.premiumPlan = plan;
-    user.premiumUntil = plan === "lifetime" ? null : user.premiumUntil;
+    user.premiumUntil = pricing.premiumDays ? nowPlusDays(pricing.premiumDays) : null;
     await user.save();
 
     res.json({ success: true, payment, user: { isPremium: user.isPremium, premiumPlan: user.premiumPlan, premiumUntil: user.premiumUntil } });
@@ -120,18 +134,17 @@ exports.verifySubscriptionPayment = async (req, res) => {
 // ✅ Payment Links (no frontend key required)
 exports.createPaymentLink = async (req, res) => {
   try {
-    if (!req.user?.emailVerified) {
-      return res.status(403).json({ success: false, message: "Please verify your email in Firebase before making payment." });
-    }
-    const { amount = 999, plan = "lifetime" } = req.body || {};
+    const { plan = "lifetime" } = req.body || {};
+    const pricing = PLAN_PRICING[plan];
+    if (!pricing) return res.status(400).json({ success: false, message: "Invalid plan" });
     const user = req.user;
 
     const frontendUrl = process.env.FRONTEND_URL || "";
     const callbackUrl = frontendUrl ? `${frontendUrl.replace(/\/$/, "")}/pricing?payment=success` : undefined;
 
     const link = await razorpay.paymentLink.create({
-      amount: Number(amount) * 100,
-      currency: "INR",
+      amount: Number(pricing.amount) * 100,
+      currency: pricing.currency,
       description: `Pariksha Typing Tutor - ${plan}`,
       customer: {
         name: user.name || "User",
@@ -145,8 +158,8 @@ exports.createPaymentLink = async (req, res) => {
     await Payment.create({
       userId: user._id,
       plan,
-      amount: Number(amount),
-      currency: "INR",
+      amount: Number(pricing.amount),
+      currency: pricing.currency,
       status: "created",
       razorpayPaymentLinkId: link.id,
       raw: link,
@@ -161,9 +174,6 @@ exports.createPaymentLink = async (req, res) => {
 // Confirm payment link status from server (no signature needed)
 exports.confirmPaymentLink = async (req, res) => {
   try {
-    if (!req.user?.emailVerified) {
-      return res.status(403).json({ success: false, message: "Please verify your email in Firebase before making payment." });
-    }
     const { paymentLinkId } = req.body || {};
     if (!paymentLinkId) return res.status(400).json({ success: false, message: "paymentLinkId required" });
 
@@ -180,7 +190,8 @@ exports.confirmPaymentLink = async (req, res) => {
       const user = await User.findById(req.user._id);
       user.isPremium = true;
       user.premiumPlan = (link?.notes && link.notes.plan) || "lifetime";
-      user.premiumUntil = null;
+      const pricing = PLAN_PRICING[user.premiumPlan] || PLAN_PRICING.lifetime;
+      user.premiumUntil = pricing.premiumDays ? nowPlusDays(pricing.premiumDays) : null;
       await user.save();
       return res.json({ success: true, paid: true, user: { isPremium: user.isPremium, premiumPlan: user.premiumPlan } });
     }

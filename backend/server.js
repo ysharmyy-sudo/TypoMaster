@@ -53,6 +53,8 @@ app.get("/", (req, res) => {
 
 // ✅ Routes
 app.use("/api/payment", paymentRoutes);
+// Backward/forward compatible alias (some frontends expect plural)
+app.use("/api/payments", paymentRoutes);
 app.use("/api/auth", authRoutes);
 
 // ❌ Not Found Route (optional but pro)
