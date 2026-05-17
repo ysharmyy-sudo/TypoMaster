@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.vite/
+.vercel/
+.render/
+.DS_Store
+.env.*
+.env.local
+.env
+backend/.env
+backend/node_modules/
+backend/npm-debug.log*
+npm-debug.log*
+*.log
+*.zip
