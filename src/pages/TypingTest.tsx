@@ -4,19 +4,7 @@ import { useAppContext } from '../context/AppContext';
 import { PageSkeleton } from '../components/SkeletonLoader';
 import { RotateCcw, Zap, AlertCircle, Keyboard, X, ExternalLink } from 'lucide-react';
 import confetti from 'canvas-confetti';
-<<<<<<< HEAD
-import VirtualKeyboard from '../components/VirtualKeyboard';
-import {
-  type TypingLanguage,
-  TYPING_LANGUAGE_OPTIONS,
-  getLanguageOption,
-  getVirtualKeyboardLayout,
-  makeDefaultPracticeText,
-} from '../constants/typingLanguages';
-import { getSanscriptScheme, transliterateToSelectedLanguage } from '../utils/transliteration';
-=======
 import HindiKeyboard, { type HindiLayout } from '../components/HindiKeyboard';
->>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
 
 // ─── Text Banks ─────────────────────────────────────────────────────────────
 
@@ -56,13 +44,10 @@ const HINDI_TEXTS: string[] = [
   "लोकसेवा आयोग और कर्मचारी चयन आयोग की परीक्षाओं में सफल होने के लिए अभ्यर्थियों को टाइपिंग में कम से कम पच्चीस शब्द प्रति मिनट की गति प्राप्त करनी होती है। इसके साथ-साथ शुद्धता का प्रतिशत भी अधिक होना चाहिए।",
 ];
 
-<<<<<<< HEAD
-=======
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type Language = 'english' | 'inscript' | 'remington';
 
->>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
 // ─── Component ───────────────────────────────────────────────────────────────
 
 const TypingTest = () => {
@@ -71,15 +56,9 @@ const TypingTest = () => {
   const navigate = useNavigate();
 
   // Language & keyboard panel
-<<<<<<< HEAD
-  const [language, setLanguage] = useState<TypingLanguage>('english');
-  const [keyboardOn, setKeyboardOn] = useState(true);
-  const [romanInput, setRomanInput] = useState('');
-=======
   const [language, setLanguage] = useState<Language>('english');
   const [hindiLayout, setHindiLayout] = useState<HindiLayout>('inscript');
   const [showKeyboard, setShowKeyboard] = useState(false);
->>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
 
   // Test state
   const [text, setText] = useState('');
@@ -119,16 +98,9 @@ const TypingTest = () => {
   }, []);
 
   // ── Language change ──
-<<<<<<< HEAD
-  const handleLanguageChange = (lang: TypingLanguage) => {
-    setLanguage(lang);
-    setUserInput('');
-    setRomanInput('');
-=======
   const handleLanguageChange = (lang: Language) => {
     setLanguage(lang);
     setUserInput('');
->>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
     setStartTime(null);
     setWpm(0);
     setAccuracy(100);
@@ -139,21 +111,11 @@ const TypingTest = () => {
     if (lang === 'english') {
       const texts = ENGLISH_TEXTS['default'];
       setText(texts[Math.floor(Math.random() * texts.length)]);
-<<<<<<< HEAD
-    } else {
-      // Use Hindi passages for Hindi layouts; for other languages use a simple practice line.
-      if (lang === 'hindi_inscript' || lang === 'hindi_remington') {
-        setText(HINDI_TEXTS[Math.floor(Math.random() * HINDI_TEXTS.length)]);
-      } else {
-        setText(makeDefaultPracticeText(lang));
-      }
-=======
       setShowKeyboard(false);
     } else {
       setText(HINDI_TEXTS[Math.floor(Math.random() * HINDI_TEXTS.length)]);
       if (lang === 'inscript') setHindiLayout('inscript');
       else setHindiLayout('remington');
->>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
     }
   };
 
@@ -185,14 +147,9 @@ const TypingTest = () => {
   };
 
   // ── Input ──
-<<<<<<< HEAD
-  const updateUserInput = (value: string) => {
-    if (isFinished) return;
-=======
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (isFinished) return;
     const value = e.target.value;
->>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
     if (!startTime && value.length > 0) handleStart();
     setUserInput(value);
 
@@ -205,55 +162,6 @@ const TypingTest = () => {
     if (value === text || value.length >= text.length) handleFinish();
   };
 
-<<<<<<< HEAD
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const v = e.target.value;
-    if (getSanscriptScheme(language) && /[^\x00-\x7F]/.test(v)) {
-      // user typed using OS layout / IME
-      setRomanInput('');
-    }
-    updateUserInput(v);
-  };
-
-  const updateFromVirtualKeyboard = (v: string) => {
-    // virtual keyboard inserts real script chars; keep roman buffer out of the way
-    if (getSanscriptScheme(language)) setRomanInput('');
-    updateUserInput(v);
-  };
-
-  // Physical keyboard typing for non-English:
-  // We transliterate Roman typing into the selected script (works for most scripts).
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    const scheme = getSanscriptScheme(language);
-    if (!scheme) return; // e.g. Urdu/Kashmiri: use virtual keyboard / OS layout
-
-    if (e.ctrlKey || e.metaKey || e.altKey) return;
-
-    const key = e.key;
-    const isPrintable = key.length === 1;
-
-    // Allow navigation keys
-    const allowed = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'Tab'];
-    if (allowed.includes(key)) return;
-
-    e.preventDefault();
-
-    setRomanInput((prev) => {
-      let next = prev;
-      if (key === 'Backspace') next = prev.slice(0, -1);
-      else if (key === 'Enter') next = prev + '\n';
-      else if (key === ' ') next = prev + ' ';
-      else if (isPrintable) next = prev + key;
-      else next = prev;
-
-      const out = transliterateToSelectedLanguage(next, language);
-      updateUserInput(out);
-      return next;
-    });
-  };
-
-=======
->>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
   // ── Finish ──
   const handleFinish = () => {
     setIsFinished(true);
@@ -304,20 +212,11 @@ const TypingTest = () => {
     );
   }
 
-<<<<<<< HEAD
-  const langMeta = getLanguageOption(language);
-  const isRtl = langMeta.dir === 'rtl';
-
-  return (
-    <div className="min-h-screen bg-slate-50 py-12 px-4 md:px-8">
-      <div className="max-w-7xl mx-auto">
-=======
   const isHindi = language !== 'english';
 
   return (
     <div className="min-h-screen bg-slate-50 py-12 px-4 md:px-8">
       <div className={`mx-auto transition-all duration-300 ${isHindi && showKeyboard ? 'max-w-[1400px]' : 'max-w-4xl'}`}>
->>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
 
         {/* ── Header ── */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -344,16 +243,6 @@ const TypingTest = () => {
         </div>
 
         {/* ── Language Toggle Bar ── */}
-<<<<<<< HEAD
-        <div className="bg-white border border-slate-200 rounded-2xl p-2 mb-6 flex items-center gap-2 overflow-x-auto">
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider px-2 hidden md:block">भाषा / Language</span>
-          
-          {TYPING_LANGUAGE_OPTIONS.map((lang) => (
-            <button
-              key={lang.id}
-              onClick={() => handleLanguageChange(lang.id)}
-              className={`flex-shrink-0 flex flex-col items-center px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
-=======
         <div className="bg-white border border-slate-200 rounded-2xl p-2 mb-6 flex flex-wrap items-center gap-2">
           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider px-2 hidden md:block">भाषा / Language</span>
           
@@ -366,7 +255,6 @@ const TypingTest = () => {
               key={lang.id}
               onClick={() => handleLanguageChange(lang.id)}
               className={`flex-1 md:flex-none flex flex-col items-center px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
->>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
                 language === lang.id
                   ? 'bg-black text-white shadow-lg'
                   : 'text-slate-500 hover:bg-slate-100'
@@ -379,26 +267,6 @@ const TypingTest = () => {
             </button>
           ))}
 
-<<<<<<< HEAD
-          <button
-            onClick={() => setKeyboardOn(s => !s)}
-            className={`ml-auto flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold border-2 transition-all ${
-              keyboardOn
-                ? 'bg-sky-500 border-sky-500 text-black'
-                : 'border-sky-200 text-sky-700 hover:bg-sky-50'
-            }`}
-          >
-            {keyboardOn ? <X size={16} /> : <Keyboard size={16} />}
-            {keyboardOn ? 'Hide Keyboard' : 'Show Keyboard'}
-          </button>
-        </div>
-
-        {/* Hindi keyboard guide shortcut */}
-        {(language === 'hindi_inscript' || language === 'hindi_remington') && (
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-3 mb-6 flex items-center justify-between gap-4">
-            <p className="text-sm text-amber-900 font-medium">
-              Need Hindi Inscript/Remington reference? Open the full keyboard guide.
-=======
           {/* Keyboard reference button — only for Hindi */}
           {isHindi && (
             <button
@@ -422,57 +290,16 @@ const TypingTest = () => {
               ⚠️ Hindi typing ke liye apne system mein{' '}
               <strong>{language === 'inscript' ? 'Inscript (Mangal)' : 'Remington Gail (Krutidev)'}</strong>{' '}
               layout enable hona chahiye. Windows: Settings → Time & Language → Language → Hindi → Options
->>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
             </p>
             <button
               onClick={() => navigate('/hindi-keyboard')}
               className="flex items-center gap-1.5 bg-amber-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap hover:bg-amber-700 transition-colors"
             >
-<<<<<<< HEAD
-              <ExternalLink size={12} /> Open Guide
-=======
               <ExternalLink size={12} /> Pura Guide
->>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
             </button>
           </div>
         )}
 
-<<<<<<< HEAD
-        {/* ── Typing + Keyboard (same screen) ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] gap-6 items-start">
-          {/* Left: Typing box */}
-          <div className="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-xl border border-slate-100 overflow-hidden">
-            {/* Passage display */}
-            <div
-              className="text-xl md:text-2xl leading-[1.8] mb-8 text-slate-300 font-medium relative min-h-[100px]"
-              dir={langMeta.dir}
-              style={{ fontFamily: language === 'english' ? undefined : 'sans-serif' }}
-            >
-              <div className="absolute inset-0 pointer-events-none z-10">
-                {text.split('').map((char, index) => {
-                  let color = 'text-slate-300';
-                  let underline = '';
-                  if (index === userInput.length && !isFinished) {
-                    underline = 'border-b-4 border-sky-500 animate-pulse';
-                  }
-                  if (index < userInput.length) {
-                    color = userInput[index] === char
-                      ? 'text-slate-900'
-                      : 'text-red-600 bg-red-100 rounded-sm';
-                  }
-                  return (
-                    <span key={index} className={`${color} ${underline} transition-all duration-75`}>
-                      {char}
-                    </span>
-                  );
-                })}
-              </div>
-              <div className="opacity-0">{text}</div>
-            </div>
-
-            {/* Textarea */}
-            <div className="relative">
-=======
         {/* ── Two-column when keyboard open, single column otherwise ── */}
         <div className={`${isHindi && showKeyboard ? 'grid grid-cols-1 xl:grid-cols-[1fr_620px] gap-6 items-start' : ''}`}>
 
@@ -507,51 +334,10 @@ const TypingTest = () => {
               </div>
 
               {/* Textarea */}
->>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
               <textarea
                 ref={inputRef}
                 value={userInput}
                 onChange={handleInputChange}
-<<<<<<< HEAD
-                onKeyDown={handleKeyDown}
-                onPaste={(e) => e.preventDefault()}
-                disabled={isFinished}
-                autoFocus
-                lang={langMeta.langTag}
-                dir={langMeta.dir}
-                className="w-full h-40 p-6 bg-slate-50 border-2 border-slate-100 rounded-3xl focus:border-sky-500 focus:bg-white outline-none resize-none text-xl md:text-2xl leading-relaxed transition-all shadow-inner font-medium"
-                placeholder={isRtl ? 'یہاں ٹائپ کرنا شروع کریں...' : 'The clock starts when you type your first letter...'}
-                style={{ fontFamily: language === 'english' ? undefined : 'sans-serif' }}
-              />
-            </div>
-          </div>
-
-          {/* Right: Virtual Keyboard */}
-          {keyboardOn && (
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm lg:sticky lg:top-24">
-              <div className="flex items-center justify-between mb-5">
-                <div>
-                  <h3 className="font-bold text-lg flex items-center gap-2">
-                    <Keyboard size={18} className="text-sky-500" /> Virtual Keyboard
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">Type using the keys.</p>
-                </div>
-                {(language === 'hindi_inscript' || language === 'hindi_remington') && (
-                  <button
-                    onClick={() => navigate('/hindi-keyboard')}
-                    className="flex items-center gap-1.5 text-sky-600 hover:text-sky-800 text-sm font-bold transition-colors"
-                  >
-                    <ExternalLink size={14} /> Hindi Guide
-                  </button>
-                )}
-              </div>
-              <VirtualKeyboard
-                value={userInput}
-                onChange={updateFromVirtualKeyboard}
-                textareaRef={inputRef}
-                layout={getVirtualKeyboardLayout(language)}
-                rtl={isRtl}
-=======
                 onPaste={(e) => e.preventDefault()}
                 disabled={isFinished}
                 autoFocus
@@ -627,53 +413,10 @@ const TypingTest = () => {
                 }}
                 showLayoutToggle={true}
                 compact={true}
->>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
               />
             </div>
           )}
         </div>
-<<<<<<< HEAD
-
-        {/* ── Controls row ── */}
-        <div className="flex justify-between items-center mb-6">
-          {!isPremium && (
-            <div className="flex items-center gap-2 text-amber-600 font-medium text-sm">
-              <Zap size={16} />
-              Free Trials: {3 - trialsUsed} left
-            </div>
-          )}
-          <div className="flex-1"></div>
-          <button
-            onClick={resetTest}
-            className="flex items-center gap-2 bg-slate-200 hover:bg-slate-300 text-slate-700 px-6 py-3 rounded-xl font-bold transition-all"
-          >
-            <RotateCcw size={18} /> Restart
-          </button>
-        </div>
-
-        {/* Keyboard is now placed on the right side */}
-
-        {/* ── Result banner ── */}
-        {isFinished && (
-          <div className="mt-2 bg-sky-900 text-white p-8 rounded-3xl flex items-center justify-between">
-            <div>
-              <h3 className="text-2xl font-bold mb-1">
-                Great Job!
-              </h3>
-              <p className="text-sky-200">
-                You completed the test with <strong>{wpm} WPM</strong> and <strong>{accuracy}%</strong> accuracy.
-              </p>
-            </div>
-            <button
-              onClick={() => navigate('/exams')}
-              className="bg-white text-black px-8 py-3 rounded-xl font-bold hover:bg-sky-100 transition-colors"
-            >
-              Back to Exams
-            </button>
-          </div>
-        )}
-=======
->>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
       </div>
     </div>
   );

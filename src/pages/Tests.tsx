@@ -143,8 +143,4 @@ const Tests = () => {
   );
 };
 
-<<<<<<< HEAD
 export default Tests;
-=======
-export default Tests;
->>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb

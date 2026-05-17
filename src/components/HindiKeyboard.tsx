@@ -310,18 +310,11 @@ const HindiKeyboard = ({
       <div className="flex items-start gap-2 mt-3 bg-slate-50 border border-slate-200 rounded-xl p-3">
         <Info size={14} className="text-slate-400 mt-0.5 flex-shrink-0" />
         <p className="text-xs text-slate-500">
-<<<<<<< HEAD
-          Click any key to preview its Hindi character. Use the Shift button to preview shift mappings.
-          {layout === 'inscript'
-            ? ' Inscript is the Government of India standard (SSC CGL/CHSL/Steno).'
-            : ' Remington Gail is typewriter-based and common in many state-level exams.'}
-=======
           Kisi bhi key par click karein uska Hindi character bade roop mein dekhne ke liye. 
           Shift button dababakar shift mappings dekhin. 
           {layout === 'inscript'
             ? ' Inscript layout GoI standard hai — SSC CGL, CHSL, Steno ke liye.'
             : ' Remington Gail layout purane typewriter par aadharit hai — UP/Bihar/MP state exams ke liye.'}
->>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
         </p>
       </div>
     </div>

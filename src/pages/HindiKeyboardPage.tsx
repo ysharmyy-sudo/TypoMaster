@@ -12,25 +12,15 @@ const HindiKeyboardPage = () => {
       fullName: 'Inscript (Mangal / Unicode)',
       exams: ['SSC CGL Skill Test', 'SSC CHSL', 'Stenographer Grade C & D', 'RRB NTPC', 'CPCT (MP)'],
       about:
-<<<<<<< HEAD
-        'Inscript (Indian Script) is the Government of India standard layout. It works with Unicode (Mangal) and is widely used in modern government exams.',
-      tip: 'Home row: A=ो S=े D=् F=ि G=ु | H=प J=र K=क L=त',
-=======
         'Inscript (Indian Script) layout bharat sarkar ka manya standard hai. Isme vowels keyboard ke bayi taraf aur consonants dayi taraf hote hain. Yeh layout Unicode/Mangal font ke saath kaam karta hai aur modern government exams mein istemaal hota hai.',
       tip: 'Home row yaad rakhen: A=ो S=े D=् F=ि G=ु | H=प J=र K=क L=त',
->>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
     },
     remington: {
       fullName: 'Remington Gail (Krutidev / Non-Unicode)',
       exams: ['UPSSSC VDO', 'Bihar SSC (BSSC)', 'MP State Exams', 'Rajasthan RSMSSB', 'Haryana SSC'],
       about:
-<<<<<<< HEAD
-        'Remington Gail is based on old typewriter machines. It is common in many state-level exams and often used with legacy (non‑Unicode) fonts like Krutidev.',
-      tip: 'Common keys: Q=ौ, W=ा, E=म, R=त, T=ज',
-=======
         'Remington Gail layout purane typewriter machines par aadharit hai. Iska mapping phonetic nahi hai — ise ratt ke seekhna padta hai. State level exams, khaaskar UP, Bihar, aur MP mein yahi layout standard hai.',
       tip: 'Yahan Q=ौ, W=ा, E=म, R=त, T=ज yaad karein — ye sabse zyada use hote hain.',
->>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
     },
   };
 
@@ -45,11 +35,7 @@ const HindiKeyboardPage = () => {
             onClick={() => navigate(-1)}
             className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-8 text-sm font-medium"
           >
-<<<<<<< HEAD
-            <ArrowLeft size={16} /> Back
-=======
             <ArrowLeft size={16} /> Wapas Jaaein
->>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
           </button>
 
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -64,11 +50,7 @@ const HindiKeyboardPage = () => {
                 हिंदी <span className="text-sky-400">कीबोर्ड</span> मार्गदर्शिका
               </h1>
               <p className="text-slate-400 max-w-xl">
-<<<<<<< HEAD
-                Inscript and Remington layouts in one place. Click any key to preview which Hindi character it produces.
-=======
                 Dono lipiyon ka poora keyboard layout ek jagah. Key par click karein aur turant dekhein ki kaunsa Hindi akshar type hoga.
->>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
               </p>
             </div>
 
@@ -111,11 +93,7 @@ const HindiKeyboardPage = () => {
 
           {/* Exams */}
           <div className="bg-white border border-slate-200 rounded-3xl p-8">
-<<<<<<< HEAD
-            <h3 className="font-bold text-lg mb-4">Where is this used?</h3>
-=======
             <h3 className="font-bold text-lg mb-4">Ye layout kin exams mein hai?</h3>
->>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
             <ul className="space-y-3">
               {info.exams.map((exam) => (
                 <li key={exam} className="flex items-center gap-3">
@@ -143,20 +121,12 @@ const HindiKeyboardPage = () => {
 
         {/* Comparison Table */}
         <div className="bg-white border border-slate-200 rounded-3xl p-8">
-<<<<<<< HEAD
-          <h2 className="text-xl font-bold mb-6">Inscript vs Remington Gail</h2>
-=======
           <h2 className="text-xl font-bold mb-6">Inscript vs Remington Gail — Farq kya hai?</h2>
->>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b-2 border-slate-100">
-<<<<<<< HEAD
-                  <th className="text-left py-3 pr-6 font-bold text-slate-500 uppercase tracking-wider text-xs">Feature</th>
-=======
                   <th className="text-left py-3 pr-6 font-bold text-slate-500 uppercase tracking-wider text-xs">Visheshta</th>
->>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
                   <th className="text-left py-3 pr-6 font-bold text-sky-600 uppercase tracking-wider text-xs">Inscript</th>
                   <th className="text-left py-3 font-bold text-violet-600 uppercase tracking-wider text-xs">Remington Gail</th>
                 </tr>
@@ -165,15 +135,9 @@ const HindiKeyboardPage = () => {
                 {[
                   ['Font/Encoding', 'Mangal (Unicode)', 'Krutidev (Non-Unicode)'],
                   ['Layout Type', 'GoI Standard', 'Typewriter-based'],
-<<<<<<< HEAD
-                  ['Learning Curve', 'Moderate', 'Hard'],
-                  ['Exams', 'Central Govt (SSC, RRB)', 'State Govt (UP, Bihar, MP)'],
-                  ['System Support', 'Built-in on Windows', 'Often needs font install'],
-=======
                   ['Learning Curve', 'Thoda mushkil', 'Zyada mushkil'],
                   ['Exams', 'Central Govt (SSC, RRB)', 'State Govt (UP, Bihar, MP)'],
                   ['System Support', 'Windows mein built-in', 'Font install karna padta hai'],
->>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
                   ['Future', 'Unicode standard — future-proof', 'Purana format — declining'],
                 ].map(([feat, ins, rem]) => (
                   <tr key={feat} className="hover:bg-slate-50 transition-colors">
@@ -190,23 +154,14 @@ const HindiKeyboardPage = () => {
         {/* CTA */}
         <div className="bg-black rounded-[2rem] p-10 text-white flex flex-col md:flex-row items-center justify-between gap-6">
           <div>
-<<<<<<< HEAD
-            <h3 className="text-2xl font-bold mb-2">Start practicing</h3>
-            <p className="text-slate-400">Once you know the layout, practice with real typing-test passages to build speed and accuracy.</p>
-=======
             <h3 className="text-2xl font-bold mb-2">Ab practice karein!</h3>
             <p className="text-slate-400">Layout samajh aa gaya? Typing test mein Hindi paragraphs type karke apni speed badhaaein.</p>
->>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
           </div>
           <button
             onClick={() => navigate('/typing-test')}
             className="bg-sky-500 text-black px-8 py-4 rounded-2xl font-bold hover:bg-sky-400 transition-all whitespace-nowrap"
           >
-<<<<<<< HEAD
-            Open Typing Test →
-=======
             Hindi Typing Test Shuru Karein →
->>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
           </button>
         </div>
       </div>
