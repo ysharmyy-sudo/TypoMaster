@@ -42,6 +42,11 @@ module.exports = async function auth(req, res, next) {
     req.firebase = { uid: firebaseUID, email, emailVerified };
     return next();
   } catch (err) {
-    return res.status(401).json({ success: false, message: "Unauthorized" });
+    const msg = err?.message || "";
+    // If firebase-admin is not configured on the server, surface a clear error.
+    if (msg.includes("Missing FIREBASE_SERVICE_ACCOUNT_JSON") || msg.includes("FIREBASE_SERVICE_ACCOUNT_BASE64")) {
+      return res.status(500).json({ success: false, message: msg });
+    }
+    return res.status(401).json({ success: false, message: "Unauthorized (invalid/expired token)" });
   }
 };
