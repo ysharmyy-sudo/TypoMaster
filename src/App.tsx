@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { AppProvider } from "./context/AppContext";
@@ -12,17 +13,37 @@ import Games from "./pages/Games";
 import Pricing from "./pages/Pricing";
 import HindiKeyboardPage from "./pages/HindiKeyboardPage";
 import Tournament from "./pages/Tournament";
+=======
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
+import { AppProvider } from './context/AppContext';
+import Navbar from './components/Navbar';
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import TypingTest from './pages/TypingTest';
+import Exams from './pages/Exams';
+import Tests from './pages/Tests';
+import Games from './pages/Games';
+import Pricing from './pages/Pricing';
+import HindiKeyboardPage from './pages/HindiKeyboardPage';
+>>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
 
 const Footer = () => (
   <footer className="bg-black text-white py-12 px-8">
     <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
       <div className="space-y-4">
+<<<<<<< HEAD
         <h3 className="text-xl font-bold uppercase tracking-tighter">
           Pariksha<span className="text-sky-400">Typing Tutor</span>
         </h3>
         <p className="text-slate-400 text-sm">
           Empowering Indian aspirants with the world's most advanced typing training platform.
         </p>
+=======
+        <h3 className="text-xl font-bold uppercase tracking-tighter">Pariksha<span className="text-sky-400">Typing Tutor</span></h3>
+        <p className="text-slate-400 text-sm">Empowering Indian aspirants with the world's most advanced typing training platform.</p>
+>>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
       </div>
       <div>
         <h4 className="font-bold mb-4">Quick Links</h4>
@@ -63,6 +84,7 @@ const ScrollToTop = () => {
   return null;
 };
 
+<<<<<<< HEAD
 const MainContent = () => (
   <div className="flex flex-col min-h-screen">
     <Navbar />
@@ -84,6 +106,30 @@ const MainContent = () => (
     <Footer />
   </div>
 );
+=======
+const MainContent = () => {
+  return (
+    <div className="flex flex-col min-h-screen">
+      <Navbar />
+      <main className="flex-grow">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/tests" element={<Tests />} />
+          <Route path="/typing-test" element={<TypingTest />} />
+          <Route path="/exams" element={<Exams />} />
+          <Route path="/games" element={<Games />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/hindi-keyboard" element={<HindiKeyboardPage />} />
+          <Route path="*" element={<Home />} />
+        </Routes>
+      </main>
+      <Footer />
+    </div>
+  );
+};
+>>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
 
 function App() {
   return (

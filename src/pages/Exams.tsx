@@ -136,4 +136,8 @@ const Exams = () => {
   );
 };
 
+<<<<<<< HEAD
 export default Exams;
+=======
+export default Exams;
+>>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb

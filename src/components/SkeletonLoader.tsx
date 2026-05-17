@@ -23,4 +23,8 @@ export const PageSkeleton = () => {
       </div>
     </div>
   );
+<<<<<<< HEAD
 };
+=======
+};
+>>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Keyboard, Gamepad2, User, LogOut, Trophy } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
@@ -6,21 +7,34 @@ const Navbar = () => {
   const { user, logout } = useAppContext();
   const navigate = useNavigate();
   const { pathname } = useLocation();
+=======
+import { Link, useNavigate } from 'react-router-dom';
+import { Keyboard, Gamepad2, User, LogOut } from 'lucide-react';
+import { useAppContext } from '../context/AppContext';
+
+const Navbar = () => {
+  const { user, setUser } = useAppContext();
+  const navigate = useNavigate();
+>>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
+<<<<<<< HEAD
   const navLink = (to: string) =>
     `hover:text-sky-400 transition-colors ${pathname === to ? 'text-sky-400' : ''}`;
 
+=======
+>>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
   return (
     <nav className="bg-black text-white py-4 px-8 flex justify-between items-center sticky top-0 z-50 shadow-lg">
       <Link to="/" className="flex items-center space-x-2 group">
         <div className="bg-sky-500 p-2 rounded-lg group-hover:bg-sky-400 transition-colors">
           <Keyboard size={24} className="text-black" />
         </div>
+<<<<<<< HEAD
         <span className="text-2xl font-bold tracking-tighter">
           PARIKSHA <span className="text-sky-400">TYPING</span> TUTOR
         </span>
@@ -45,6 +59,17 @@ const Navbar = () => {
           {/* Live indicator dot */}
           <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping inline-block"></span>
         </Link>
+=======
+        <span className="text-2xl font-bold tracking-tighter">PARIKSHA<span className="text-sky-400">TUTOR</span></span>
+      </Link>
+
+      <div className="hidden md:flex items-center space-x-8 font-medium">
+        <Link to="/exams" className="hover:text-sky-400 transition-colors">Exams</Link>
+        <Link to="/tests" className="hover:text-sky-400 transition-colors">Test</Link>
+        <Link to="/games" className="hover:text-sky-400 transition-colors flex items-center gap-2">
+          <Gamepad2 size={18} /> Games
+        </Link>
+>>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
         <Link to="/pricing" className="bg-sky-500 hover:bg-sky-400 text-black px-4 py-1.5 rounded-full transition-colors text-sm font-bold shadow-lg shadow-sky-500/20">
           Go Premium
         </Link>

@@ -4,6 +4,7 @@ import { useAppContext } from '../context/AppContext';
 import { PageSkeleton } from '../components/SkeletonLoader';
 import { RotateCcw, Zap, AlertCircle, Keyboard, X, ExternalLink } from 'lucide-react';
 import confetti from 'canvas-confetti';
+<<<<<<< HEAD
 import VirtualKeyboard from '../components/VirtualKeyboard';
 import {
   type TypingLanguage,
@@ -13,6 +14,9 @@ import {
   makeDefaultPracticeText,
 } from '../constants/typingLanguages';
 import { getSanscriptScheme, transliterateToSelectedLanguage } from '../utils/transliteration';
+=======
+import HindiKeyboard, { type HindiLayout } from '../components/HindiKeyboard';
+>>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
 
 // ─── Text Banks ─────────────────────────────────────────────────────────────
 
@@ -52,6 +56,13 @@ const HINDI_TEXTS: string[] = [
   "लोकसेवा आयोग और कर्मचारी चयन आयोग की परीक्षाओं में सफल होने के लिए अभ्यर्थियों को टाइपिंग में कम से कम पच्चीस शब्द प्रति मिनट की गति प्राप्त करनी होती है। इसके साथ-साथ शुद्धता का प्रतिशत भी अधिक होना चाहिए।",
 ];
 
+<<<<<<< HEAD
+=======
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+type Language = 'english' | 'inscript' | 'remington';
+
+>>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
 // ─── Component ───────────────────────────────────────────────────────────────
 
 const TypingTest = () => {
@@ -60,9 +71,15 @@ const TypingTest = () => {
   const navigate = useNavigate();
 
   // Language & keyboard panel
+<<<<<<< HEAD
   const [language, setLanguage] = useState<TypingLanguage>('english');
   const [keyboardOn, setKeyboardOn] = useState(true);
   const [romanInput, setRomanInput] = useState('');
+=======
+  const [language, setLanguage] = useState<Language>('english');
+  const [hindiLayout, setHindiLayout] = useState<HindiLayout>('inscript');
+  const [showKeyboard, setShowKeyboard] = useState(false);
+>>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
 
   // Test state
   const [text, setText] = useState('');
@@ -102,10 +119,16 @@ const TypingTest = () => {
   }, []);
 
   // ── Language change ──
+<<<<<<< HEAD
   const handleLanguageChange = (lang: TypingLanguage) => {
     setLanguage(lang);
     setUserInput('');
     setRomanInput('');
+=======
+  const handleLanguageChange = (lang: Language) => {
+    setLanguage(lang);
+    setUserInput('');
+>>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
     setStartTime(null);
     setWpm(0);
     setAccuracy(100);
@@ -116,6 +139,7 @@ const TypingTest = () => {
     if (lang === 'english') {
       const texts = ENGLISH_TEXTS['default'];
       setText(texts[Math.floor(Math.random() * texts.length)]);
+<<<<<<< HEAD
     } else {
       // Use Hindi passages for Hindi layouts; for other languages use a simple practice line.
       if (lang === 'hindi_inscript' || lang === 'hindi_remington') {
@@ -123,6 +147,13 @@ const TypingTest = () => {
       } else {
         setText(makeDefaultPracticeText(lang));
       }
+=======
+      setShowKeyboard(false);
+    } else {
+      setText(HINDI_TEXTS[Math.floor(Math.random() * HINDI_TEXTS.length)]);
+      if (lang === 'inscript') setHindiLayout('inscript');
+      else setHindiLayout('remington');
+>>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
     }
   };
 
@@ -154,8 +185,14 @@ const TypingTest = () => {
   };
 
   // ── Input ──
+<<<<<<< HEAD
   const updateUserInput = (value: string) => {
     if (isFinished) return;
+=======
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    if (isFinished) return;
+    const value = e.target.value;
+>>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
     if (!startTime && value.length > 0) handleStart();
     setUserInput(value);
 
@@ -168,6 +205,7 @@ const TypingTest = () => {
     if (value === text || value.length >= text.length) handleFinish();
   };
 
+<<<<<<< HEAD
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const v = e.target.value;
     if (getSanscriptScheme(language) && /[^\x00-\x7F]/.test(v)) {
@@ -214,6 +252,8 @@ const TypingTest = () => {
     });
   };
 
+=======
+>>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
   // ── Finish ──
   const handleFinish = () => {
     setIsFinished(true);
@@ -264,12 +304,20 @@ const TypingTest = () => {
     );
   }
 
+<<<<<<< HEAD
   const langMeta = getLanguageOption(language);
   const isRtl = langMeta.dir === 'rtl';
 
   return (
     <div className="min-h-screen bg-slate-50 py-12 px-4 md:px-8">
       <div className="max-w-7xl mx-auto">
+=======
+  const isHindi = language !== 'english';
+
+  return (
+    <div className="min-h-screen bg-slate-50 py-12 px-4 md:px-8">
+      <div className={`mx-auto transition-all duration-300 ${isHindi && showKeyboard ? 'max-w-[1400px]' : 'max-w-4xl'}`}>
+>>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
 
         {/* ── Header ── */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -296,6 +344,7 @@ const TypingTest = () => {
         </div>
 
         {/* ── Language Toggle Bar ── */}
+<<<<<<< HEAD
         <div className="bg-white border border-slate-200 rounded-2xl p-2 mb-6 flex items-center gap-2 overflow-x-auto">
           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider px-2 hidden md:block">भाषा / Language</span>
           
@@ -304,6 +353,20 @@ const TypingTest = () => {
               key={lang.id}
               onClick={() => handleLanguageChange(lang.id)}
               className={`flex-shrink-0 flex flex-col items-center px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
+=======
+        <div className="bg-white border border-slate-200 rounded-2xl p-2 mb-6 flex flex-wrap items-center gap-2">
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider px-2 hidden md:block">भाषा / Language</span>
+          
+          {[
+            { id: 'english' as Language, label: 'English', sub: 'SSC / IBPS' },
+            { id: 'inscript' as Language, label: 'हिंदी — Inscript', sub: 'Mangal / Unicode' },
+            { id: 'remington' as Language, label: 'हिंदी — Remington', sub: 'Krutidev / State' },
+          ].map((lang) => (
+            <button
+              key={lang.id}
+              onClick={() => handleLanguageChange(lang.id)}
+              className={`flex-1 md:flex-none flex flex-col items-center px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
+>>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
                 language === lang.id
                   ? 'bg-black text-white shadow-lg'
                   : 'text-slate-500 hover:bg-slate-100'
@@ -316,6 +379,7 @@ const TypingTest = () => {
             </button>
           ))}
 
+<<<<<<< HEAD
           <button
             onClick={() => setKeyboardOn(s => !s)}
             className={`ml-auto flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold border-2 transition-all ${
@@ -334,16 +398,46 @@ const TypingTest = () => {
           <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-3 mb-6 flex items-center justify-between gap-4">
             <p className="text-sm text-amber-900 font-medium">
               Need Hindi Inscript/Remington reference? Open the full keyboard guide.
+=======
+          {/* Keyboard reference button — only for Hindi */}
+          {isHindi && (
+            <button
+              onClick={() => setShowKeyboard(s => !s)}
+              className={`ml-auto flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold border-2 transition-all ${
+                showKeyboard
+                  ? 'bg-sky-500 border-sky-500 text-black'
+                  : 'border-sky-200 text-sky-600 hover:bg-sky-50'
+              }`}
+            >
+              {showKeyboard ? <X size={16} /> : <Keyboard size={16} />}
+              {showKeyboard ? 'Keyboard Band Karein' : 'Keyboard Dekhein'}
+            </button>
+          )}
+        </div>
+
+        {/* ── Hindi system notice ── */}
+        {isHindi && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-3 mb-6 flex items-center justify-between gap-4">
+            <p className="text-sm text-amber-800 font-medium">
+              ⚠️ Hindi typing ke liye apne system mein{' '}
+              <strong>{language === 'inscript' ? 'Inscript (Mangal)' : 'Remington Gail (Krutidev)'}</strong>{' '}
+              layout enable hona chahiye. Windows: Settings → Time & Language → Language → Hindi → Options
+>>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
             </p>
             <button
               onClick={() => navigate('/hindi-keyboard')}
               className="flex items-center gap-1.5 bg-amber-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap hover:bg-amber-700 transition-colors"
             >
+<<<<<<< HEAD
               <ExternalLink size={12} /> Open Guide
+=======
+              <ExternalLink size={12} /> Pura Guide
+>>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
             </button>
           </div>
         )}
 
+<<<<<<< HEAD
         {/* ── Typing + Keyboard (same screen) ── */}
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] gap-6 items-start">
           {/* Left: Typing box */}
@@ -378,10 +472,47 @@ const TypingTest = () => {
 
             {/* Textarea */}
             <div className="relative">
+=======
+        {/* ── Two-column when keyboard open, single column otherwise ── */}
+        <div className={`${isHindi && showKeyboard ? 'grid grid-cols-1 xl:grid-cols-[1fr_620px] gap-6 items-start' : ''}`}>
+
+          {/* ── Left: Typing area ── */}
+          <div>
+            <div className="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-xl border border-slate-100 mb-4 overflow-hidden">
+              {/* Passage display */}
+              <div
+                className="text-xl md:text-2xl leading-[1.8] mb-8 text-slate-300 font-medium relative min-h-[100px]"
+                style={{ fontFamily: isHindi ? 'sans-serif' : undefined }}
+              >
+                <div className="absolute inset-0 pointer-events-none z-10">
+                  {text.split('').map((char, index) => {
+                    let color = 'text-slate-300';
+                    let underline = '';
+                    if (index === userInput.length && !isFinished) {
+                      underline = 'border-b-4 border-sky-500 animate-pulse';
+                    }
+                    if (index < userInput.length) {
+                      color = userInput[index] === char
+                        ? 'text-slate-900'
+                        : 'text-red-600 bg-red-100 rounded-sm';
+                    }
+                    return (
+                      <span key={index} className={`${color} ${underline} transition-all duration-75`}>
+                        {char}
+                      </span>
+                    );
+                  })}
+                </div>
+                <div className="opacity-0">{text}</div>
+              </div>
+
+              {/* Textarea */}
+>>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
               <textarea
                 ref={inputRef}
                 value={userInput}
                 onChange={handleInputChange}
+<<<<<<< HEAD
                 onKeyDown={handleKeyDown}
                 onPaste={(e) => e.preventDefault()}
                 disabled={isFinished}
@@ -420,10 +551,88 @@ const TypingTest = () => {
                 textareaRef={inputRef}
                 layout={getVirtualKeyboardLayout(language)}
                 rtl={isRtl}
+=======
+                onPaste={(e) => e.preventDefault()}
+                disabled={isFinished}
+                autoFocus
+                lang={isHindi ? 'hi' : 'en'}
+                className="w-full h-40 p-6 bg-slate-50 border-2 border-slate-100 rounded-3xl focus:border-sky-500 focus:bg-white outline-none resize-none text-xl md:text-2xl leading-relaxed transition-all shadow-inner font-medium"
+                placeholder={isHindi ? 'यहाँ टाइप करना शुरू करें...' : 'The clock starts when you type your first letter...'}
+                style={{ fontFamily: isHindi ? 'sans-serif' : undefined }}
+              />
+            </div>
+
+            {/* Controls row */}
+            <div className="flex justify-between items-center mb-6">
+              {!isPremium && (
+                <div className="flex items-center gap-2 text-amber-600 font-medium text-sm">
+                  <Zap size={16} />
+                  Free Trials: {3 - trialsUsed} left
+                </div>
+              )}
+              <div className="flex-1"></div>
+              <button
+                onClick={resetTest}
+                className="flex items-center gap-2 bg-slate-200 hover:bg-slate-300 text-slate-700 px-6 py-3 rounded-xl font-bold transition-all"
+              >
+                <RotateCcw size={18} /> Restart
+              </button>
+            </div>
+
+            {/* Result banner */}
+            {isFinished && (
+              <div className="mt-2 bg-sky-900 text-white p-8 rounded-3xl flex items-center justify-between">
+                <div>
+                  <h3 className="text-2xl font-bold mb-1">
+                    {isHindi ? 'शाबाश! बहुत अच्छा!' : 'Great Job!'}
+                  </h3>
+                  <p className="text-sky-200">
+                    You completed the test with <strong>{wpm} WPM</strong> and <strong>{accuracy}%</strong> accuracy.
+                  </p>
+                </div>
+                <button
+                  onClick={() => navigate('/exams')}
+                  className="bg-white text-black px-8 py-3 rounded-xl font-bold hover:bg-sky-100 transition-colors"
+                >
+                  Back to Exams
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* ── Right: Keyboard (sticky alongside typing area) ── */}
+          {isHindi && showKeyboard && (
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm sticky top-24 self-start overflow-x-auto">
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h3 className="font-bold text-lg flex items-center gap-2">
+                    <Keyboard size={18} className="text-sky-500" /> Keyboard Reference
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Key par click karein — character bada dikhega
+                  </p>
+                </div>
+                <button
+                  onClick={() => navigate('/hindi-keyboard')}
+                  className="flex items-center gap-1.5 text-sky-600 hover:text-sky-800 text-sm font-bold transition-colors"
+                >
+                  <ExternalLink size={14} /> Pura Page
+                </button>
+              </div>
+              <HindiKeyboard
+                layout={hindiLayout}
+                onLayoutChange={(l) => {
+                  setHindiLayout(l);
+                  handleLanguageChange(l === 'inscript' ? 'inscript' : 'remington');
+                }}
+                showLayoutToggle={true}
+                compact={true}
+>>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
               />
             </div>
           )}
         </div>
+<<<<<<< HEAD
 
         {/* ── Controls row ── */}
         <div className="flex justify-between items-center mb-6">
@@ -463,6 +672,8 @@ const TypingTest = () => {
             </button>
           </div>
         )}
+=======
+>>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
       </div>
     </div>
   );

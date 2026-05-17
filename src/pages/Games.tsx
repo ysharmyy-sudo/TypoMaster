@@ -133,4 +133,8 @@ const Games = () => {
   );
 };
 
+<<<<<<< HEAD
 export default Games;
+=======
+export default Games;
+>>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb

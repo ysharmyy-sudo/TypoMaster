@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 node_modules/
 dist/
 .vite/
@@ -13,3 +14,9 @@ backend/npm-debug.log*
 npm-debug.log*
 *.log
 *.zip
+=======
+node_modules
+dist
+.env
+backend/.env
+>>>>>>> 39a96ac736ae2ec4b42279a20571ac014a6a46eb
