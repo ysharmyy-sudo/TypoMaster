@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { Mail, Lock, ArrowRight, Shield } from 'lucide-react';
-import { signInWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../firebase';
 import { apiGet } from '../utils/api';
 
@@ -14,6 +14,26 @@ const Login = () => {
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+
+  const handleResetPassword = async () => {
+    const e = email.trim().toLowerCase();
+    if (!e) {
+      setError('Pehle apna email address daalo, phir Reset Password dabao.');
+      return;
+    }
+    try {
+      setError('');
+      setInfo('');
+      setIsResetting(true);
+      await sendPasswordResetEmail(auth, e);
+      setInfo('Password reset mail send ho gaya hai. Gmail me inbox/spam check karo.');
+    } catch (err: any) {
+      setError(err?.message || 'Reset password failed');
+    } finally {
+      setIsResetting(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +41,9 @@ const Login = () => {
       setError('');
       setInfo('');
       setIsSubmitting(true);
-      const cred = await signInWithEmailAndPassword(auth, email, password);
+      const eMail = email.trim().toLowerCase();
+      const pass = password; // keep as-is; some users may have spaces
+      const cred = await signInWithEmailAndPassword(auth, eMail, pass);
       // NOTE: Email verification ko login-blocker mat banao (deadline-friendly).
       // Agar user verify nahi hai, to bhi login allow karein; bas info dikha dein.
       if (!cred.user.emailVerified) {
@@ -34,7 +56,7 @@ const Login = () => {
       // Backend profile fetch ko background me run karo taaki Render cold start / network delay se login block na ho.
       setUser({
         name: cred.user.displayName || email.split('@')[0],
-        email,
+        email: eMail,
         emailVerified: !!cred.user.emailVerified,
       });
       setPremium(false);
@@ -52,7 +74,14 @@ const Login = () => {
         }
       })();
     } catch (err: any) {
-      setError(err?.message || 'Login failed');
+      const code = err?.code || '';
+      if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') {
+        setError('Email ya password galat hai (ya account exist nahi karta). “Reset Password” try karo.');
+      } else if (code === 'auth/operation-not-allowed') {
+        setError('Firebase me Email/Password sign-in enable nahi hai. Firebase Console → Authentication → Sign-in method me enable karo.');
+      } else {
+        setError(err?.message || 'Login failed');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -118,6 +147,19 @@ const Login = () => {
             }`}
           >
             {isSubmitting ? 'Signing In...' : 'Sign In'} <ArrowRight size={20} />
+          </button>
+
+          <button
+            type="button"
+            onClick={handleResetPassword}
+            disabled={isResetting}
+            className={`w-full py-3 rounded-xl font-bold transition-all border ${
+              isResetting
+                ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+                : 'bg-white text-slate-700 border-slate-200 hover:border-slate-400'
+            }`}
+          >
+            {isResetting ? 'Sending reset mail...' : 'Reset Password'}
           </button>
 
           <p className="text-center text-slate-600 text-sm">
