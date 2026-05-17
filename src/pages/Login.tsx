@@ -13,12 +13,14 @@ const Login = () => {
   const navigate = useNavigate();
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       setError('');
       setInfo('');
+      setIsSubmitting(true);
       const cred = await signInWithEmailAndPassword(auth, email, password);
       // NOTE: Email verification ko login-blocker mat banao (deadline-friendly).
       // Agar user verify nahi hai, to bhi login allow karein; bas info dikha dein.
@@ -28,16 +30,31 @@ const Login = () => {
         try { await sendEmailVerification(cred.user); } catch { /* ignore */ }
       }
 
-      const res = await apiGet<{ success: boolean; user: any }>('/api/auth/me');
-      if (res?.user) {
-        setUser(res.user);
-        setPremium(!!res.user.isPremium);
-      } else {
-        setUser({ name: email.split('@')[0], email });
-      }
+      // ✅ Deadline-friendly: redirect immediately after Firebase login.
+      // Backend profile fetch ko background me run karo taaki Render cold start / network delay se login block na ho.
+      setUser({
+        name: cred.user.displayName || email.split('@')[0],
+        email,
+        emailVerified: !!cred.user.emailVerified,
+      });
+      setPremium(false);
       navigate('/');
+
+      void (async () => {
+        try {
+          const res = await apiGet<{ success: boolean; user: any }>('/api/auth/me');
+          if (res?.user) {
+            setUser(res.user);
+            setPremium(!!res.user.isPremium);
+          }
+        } catch {
+          // ignore: app will still work with fallback user
+        }
+      })();
     } catch (err: any) {
       setError(err?.message || 'Login failed');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -95,9 +112,12 @@ const Login = () => {
 
           <button 
             type="submit"
-            className="w-full bg-black text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-900 transition-all"
+            disabled={isSubmitting}
+            className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${
+              isSubmitting ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-black text-white hover:bg-slate-900'
+            }`}
           >
-            Sign In <ArrowRight size={20} />
+            {isSubmitting ? 'Signing In...' : 'Sign In'} <ArrowRight size={20} />
           </button>
 
           <p className="text-center text-slate-600 text-sm">
