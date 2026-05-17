@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { Mail, Lock, ArrowRight, Shield } from 'lucide-react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
 import { auth } from '../firebase';
 import { apiGet } from '../utils/api';
 
@@ -12,15 +12,20 @@ const Login = () => {
   const { setUser, setPremium } = useAppContext();
   const navigate = useNavigate();
   const [error, setError] = useState('');
+  const [info, setInfo] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       setError('');
+      setInfo('');
       const cred = await signInWithEmailAndPassword(auth, email, password);
+      // NOTE: Email verification ko login-blocker mat banao (deadline-friendly).
+      // Agar user verify nahi hai, to bhi login allow karein; bas info dikha dein.
       if (!cred.user.emailVerified) {
-        setError('Pehle Gmail me email verify karo, phir login karo.');
-        return;
+        setInfo('Note: Aapka email abhi verify nahi hai. Login ho jayega, lekin security ke liye verification recommended hai.');
+        // Best-effort: resend verification email (agar Firebase allow kare).
+        try { await sendEmailVerification(cred.user); } catch { /* ignore */ }
       }
 
       const res = await apiGet<{ success: boolean; user: any }>('/api/auth/me');
@@ -51,6 +56,11 @@ const Login = () => {
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
               {error}
+            </div>
+          )}
+          {info && (
+            <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-xl px-4 py-3">
+              {info}
             </div>
           )}
           <div>

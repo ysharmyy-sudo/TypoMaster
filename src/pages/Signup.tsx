@@ -25,7 +25,7 @@ const Signup = () => {
 
       // basic optimistic UI
       setUser({ name: name || email.split('@')[0], email, emailVerified: false });
-      setInfo('Signup done. Ab Gmail me verification mail aayega—pehle verify karo, phir login karo.');
+      setInfo('Signup done. Verification mail send ho gaya hai (recommended). Aap login kar sakte ho.');
       navigate('/login');
     } catch (err: any) {
       setError(err?.message || 'Signup failed');
