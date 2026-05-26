@@ -31,12 +31,13 @@ const Pricing = () => {
 
       // User must be logged-in because backend verifies Firebase ID token
       if (!auth.currentUser) {
+        setError('Please sign in to continue with payment.');
         navigate('/login');
         return;
       }
 
       const ok = await loadRazorpay();
-      if (!ok) throw new Error('Razorpay SDK load nahi ho paya. Internet check karo.');
+      if (!ok) throw new Error('Unable to load Razorpay. Please check your internet connection and try again.');
 
       // Create order on backend (amount is computed server-side)
       const res = await apiPost<{ success: boolean; order: any; keyId: string; message?: string }>(
@@ -70,18 +71,22 @@ const Pricing = () => {
         theme: { color: '#0ea5e9' },
         handler: async (response: any) => {
           // Verify signature on backend (key_secret stays server-side)
-          const v = await apiPost<{ success: boolean; message?: string; user?: any }>(
-            '/api/payment/verify-order',
-            {
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-            }
-          );
-          if (!v?.success) throw new Error(v?.message || 'Payment verification failed');
+          try {
+            const v = await apiPost<{ success: boolean; message?: string; user?: any }>(
+              '/api/payment/verify-order',
+              {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }
+            );
+            if (!v?.success) throw new Error(v?.message || 'Payment verification failed');
 
-          setPremium(true);
-          navigate('/');
+            setPremium(true);
+            navigate('/');
+          } finally {
+            setLoadingPlan(null);
+          }
         },
         modal: {
           ondismiss: () => setLoadingPlan(null),
@@ -90,12 +95,12 @@ const Pricing = () => {
 
       const rzp = new (window as any).Razorpay(options);
       rzp.on('payment.failed', (resp: any) => {
-        setError(resp?.error?.description || 'Payment failed');
+        setError(resp?.error?.description || resp?.error?.reason || 'Payment failed. Please try again.');
+        setLoadingPlan(null);
       });
       rzp.open();
     } catch (e: any) {
       setError(e?.message || 'Payment error');
-    } finally {
       setLoadingPlan(null);
     }
   };
