@@ -55,6 +55,42 @@ const HINDI_TEXTS: string[] = [
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type Language = TypingLanguage;
+type DurationMin = 1 | 3 | 5 | 10 | 15;
+
+const DEFAULT_DURATION_OPTIONS: DurationMin[] = [1, 3, 5, 10, 15];
+
+// Exam-specific default duration (and allowed variations)
+const EXAM_DURATIONS: Record<string, { defaultMin: DurationMin; options: DurationMin[] }> = {
+  'ssc-cgl': { defaultMin: 15, options: DEFAULT_DURATION_OPTIONS },
+  'ssc-chsl': { defaultMin: 10, options: DEFAULT_DURATION_OPTIONS },
+  'rrb-ntpc': { defaultMin: 10, options: DEFAULT_DURATION_OPTIONS },
+  'ibps-po': { defaultMin: 15, options: DEFAULT_DURATION_OPTIONS },
+  // New exams (defaults chosen to match typical typing tests; you can tweak later)
+  'dsssb-ja-pa-spa': { defaultMin: 10, options: DEFAULT_DURATION_OPTIONS },
+  'dsssb-ja-ldc-dass': { defaultMin: 10, options: DEFAULT_DURATION_OPTIONS },
+  'delhi-hc-jja': { defaultMin: 10, options: DEFAULT_DURATION_OPTIONS },
+  'delhi-hc-pa-spa': { defaultMin: 10, options: DEFAULT_DURATION_OPTIONS },
+  'supreme-court-jca': { defaultMin: 10, options: DEFAULT_DURATION_OPTIONS },
+  'rrb-ntpc-gdce': { defaultMin: 10, options: DEFAULT_DURATION_OPTIONS },
+  'allahabad-hc-ja-steno': { defaultMin: 10, options: DEFAULT_DURATION_OPTIONS },
+  'allahabad-hc-ro-aro': { defaultMin: 10, options: DEFAULT_DURATION_OPTIONS },
+  'nvs-jsa': { defaultMin: 10, options: DEFAULT_DURATION_OPTIONS },
+  'csir-jsa-english': { defaultMin: 10, options: DEFAULT_DURATION_OPTIONS },
+  'ncert-ldc': { defaultMin: 10, options: DEFAULT_DURATION_OPTIONS },
+  'kvs-jsa': { defaultMin: 10, options: DEFAULT_DURATION_OPTIONS },
+  'dda-jsa': { defaultMin: 10, options: DEFAULT_DURATION_OPTIONS },
+  'up-police-typing': { defaultMin: 5, options: DEFAULT_DURATION_OPTIONS },
+  'upsssc-ja': { defaultMin: 10, options: DEFAULT_DURATION_OPTIONS },
+  'delhi-police-typing-course': { defaultMin: 5, options: DEFAULT_DURATION_OPTIONS },
+  'delhi-police-awo-tpo': { defaultMin: 5, options: DEFAULT_DURATION_OPTIONS },
+  'bsf-hcm': { defaultMin: 5, options: DEFAULT_DURATION_OPTIONS },
+  'crpf-hcm': { defaultMin: 5, options: DEFAULT_DURATION_OPTIONS },
+  'jnu-ja': { defaultMin: 5, options: DEFAULT_DURATION_OPTIONS },
+  'epfo-ssa': { defaultMin: 10, options: DEFAULT_DURATION_OPTIONS },
+  'cbse-typing': { defaultMin: 5, options: DEFAULT_DURATION_OPTIONS },
+  'drdo-assistant-typing': { defaultMin: 5, options: DEFAULT_DURATION_OPTIONS },
+  'aiims-cre-typing': { defaultMin: 5, options: DEFAULT_DURATION_OPTIONS },
+};
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -71,6 +107,9 @@ const TypingTest = () => {
   // Test state
   const [text, setText] = useState('');
   const [examTitle, setExamTitle] = useState('Standard Practice');
+  const [examId, setExamId] = useState<string>('default');
+  const [durationMin, setDurationMin] = useState<DurationMin>(1);
+  const [durationOptions, setDurationOptions] = useState<DurationMin[]>(DEFAULT_DURATION_OPTIONS);
   const [userInput, setUserInput] = useState('');
   const [startTime, setStartTime] = useState<number | null>(null);
   const [wpm, setWpm] = useState(0);
@@ -84,21 +123,37 @@ const TypingTest = () => {
   const isHindi = language === 'hindi_inscript' || language === 'hindi_remington';
   const isNonEnglish = language !== 'english';
 
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${String(s).padStart(2, '0')}`;
+  };
+
   // ── Init ──
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const gameId = params.get('game');
-    const examId = params.get('exam');
+    const eId = params.get('exam') || 'default';
     const title = params.get('title');
+    const durationParam = params.get('duration');
 
     if (title) setExamTitle(title);
+    setExamId(eId);
+
+    const examCfg = EXAM_DURATIONS[eId] || { defaultMin: 1 as DurationMin, options: DEFAULT_DURATION_OPTIONS };
+    setDurationOptions(examCfg.options);
+    const parsed = Number(durationParam);
+    const requested = (Number.isFinite(parsed) ? parsed : examCfg.defaultMin) as DurationMin;
+    const chosen = (examCfg.options.includes(requested) ? requested : examCfg.defaultMin) as DurationMin;
+    setDurationMin(chosen);
+    setTimeLeft(chosen * 60);
 
     // Default = English (same behaviour as earlier)
     let selectedText = '';
     if (gameId) {
       selectedText = "The game mode is active. Focus on every character to master the speed challenge!";
-    } else if (examId && ENGLISH_TEXTS[examId]) {
-      const texts = ENGLISH_TEXTS[examId];
+    } else if (eId && ENGLISH_TEXTS[eId]) {
+      const texts = ENGLISH_TEXTS[eId];
       selectedText = texts[Math.floor(Math.random() * texts.length)];
     } else {
       const texts = ENGLISH_TEXTS['default'];
@@ -119,7 +174,7 @@ const TypingTest = () => {
     setWpm(0);
     setAccuracy(100);
     setIsFinished(false);
-    setTimeLeft(60);
+    setTimeLeft(durationMin * 60);
     setTrialError(false);
 
     // Update title for non-english languages (helps users confirm selection)
@@ -198,7 +253,7 @@ const TypingTest = () => {
     setWpm(0);
     setAccuracy(100);
     setIsFinished(false);
-    setTimeLeft(60);
+    setTimeLeft(durationMin * 60);
     setTrialError(false);
 
     if (language === 'english') {
@@ -262,7 +317,7 @@ const TypingTest = () => {
             </div>
             <div className="bg-black text-white px-6 py-3 rounded-2xl flex flex-col items-center min-w-[90px]">
               <span className="text-xs font-bold text-slate-400 uppercase">Time</span>
-              <span className="text-2xl font-bold text-sky-400">{timeLeft}s</span>
+              <span className="text-2xl font-bold text-sky-400">{formatTime(timeLeft)}</span>
             </div>
           </div>
         </div>
@@ -284,6 +339,49 @@ const TypingTest = () => {
             </select>
             <p className="text-[11px] text-slate-400 mt-1 px-1">
               Selected script: <span className="font-semibold">{langOption.sub}</span>
+            </p>
+          </div>
+
+          {/* Duration selector (1/3/5/10/15 min) */}
+          <div className="flex-1 md:flex-none min-w-[200px]">
+            <select
+              value={durationMin}
+              onChange={(e) => {
+                const next = Number(e.target.value) as DurationMin;
+                setDurationMin(next);
+                setUserInput('');
+                setStartTime(null);
+                setWpm(0);
+                setAccuracy(100);
+                setIsFinished(false);
+                setTrialError(false);
+                setTimeLeft(next * 60);
+
+                // Refresh passage (keeps same exam context)
+                if (language === 'english') {
+                  if (examId && ENGLISH_TEXTS[examId]) {
+                    const texts = ENGLISH_TEXTS[examId];
+                    setText(texts[Math.floor(Math.random() * texts.length)]);
+                  } else {
+                    const texts = ENGLISH_TEXTS['default'];
+                    setText(texts[Math.floor(Math.random() * texts.length)]);
+                  }
+                } else if (isHindi) {
+                  setText(HINDI_TEXTS[Math.floor(Math.random() * HINDI_TEXTS.length)]);
+                } else {
+                  setText(makeDefaultPracticeText(language));
+                }
+              }}
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent outline-none font-bold text-slate-800"
+            >
+              {(durationOptions || DEFAULT_DURATION_OPTIONS).map((m) => (
+                <option key={m} value={m}>
+                  Duration: {m} min
+                </option>
+              ))}
+            </select>
+            <p className="text-[11px] text-slate-400 mt-1 px-1">
+              Choose time as per exam pattern.
             </p>
           </div>
 
