@@ -12,6 +12,7 @@ import Games from './pages/Games';
 import Pricing from './pages/Pricing';
 import HindiKeyboardPage from './pages/HindiKeyboardPage';
 import Tournament from './pages/Tournament';
+import Analytics from './pages/Analytics';
 
 const Footer = () => (
   <footer className="bg-black text-white py-12 px-8">
@@ -60,9 +61,16 @@ const ScrollToTop = () => {
 };
 
 const MainContent = () => {
+  const location = useLocation();
+  const isFocusMode = (() => {
+    if (location.pathname !== '/typing-test') return false;
+    const p = new URLSearchParams(location.search);
+    return p.get('focus') === '1';
+  })();
+
   return (
     <div className="flex flex-col min-h-screen">
-      <Navbar />
+      {!isFocusMode && <Navbar />}
       <main className="flex-grow">
         <Routes>
           <Route path="/" element={<Home />} />
@@ -73,12 +81,13 @@ const MainContent = () => {
           <Route path="/exams" element={<Exams />} />
           <Route path="/games" element={<Games />} />
           <Route path="/pricing" element={<Pricing />} />
+          <Route path="/analytics" element={<Analytics />} />
           <Route path="/hindi-keyboard" element={<HindiKeyboardPage />} />
           <Route path="/tournament" element={<Tournament />} />
           <Route path="*" element={<Home />} />
         </Routes>
       </main>
-      <Footer />
+      {!isFocusMode && <Footer />}
     </div>
   );
 };

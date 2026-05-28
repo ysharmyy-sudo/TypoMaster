@@ -55,7 +55,7 @@ const HINDI_TEXTS: string[] = [
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type Language = TypingLanguage;
-type DurationMin = 1 | 3 | 5 | 10 | 15;
+type DurationMin = number;
 
 const DEFAULT_DURATION_OPTIONS: DurationMin[] = [1, 3, 5, 10, 15];
 
@@ -92,6 +92,21 @@ const EXAM_DURATIONS: Record<string, { defaultMin: DurationMin; options: Duratio
   'aiims-cre-typing': { defaultMin: 5, options: DEFAULT_DURATION_OPTIONS },
 };
 
+type SessionRecord = {
+  ts: number;
+  examId: string;
+  examTitle: string;
+  durationMin: number;
+  language: string;
+  wpm: number;
+  accuracy: number;
+  typedChars: number;
+  correctChars: number;
+  errors: number;
+};
+
+const SESSIONS_KEY = 'ptt_sessions_v1';
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 const TypingTest = () => {
@@ -110,6 +125,7 @@ const TypingTest = () => {
   const [examId, setExamId] = useState<string>('default');
   const [durationMin, setDurationMin] = useState<DurationMin>(1);
   const [durationOptions, setDurationOptions] = useState<DurationMin[]>(DEFAULT_DURATION_OPTIONS);
+  const [isFocusMode, setIsFocusMode] = useState(false);
   const [userInput, setUserInput] = useState('');
   const [startTime, setStartTime] = useState<number | null>(null);
   const [wpm, setWpm] = useState(0);
@@ -136,17 +152,32 @@ const TypingTest = () => {
     const eId = params.get('exam') || 'default';
     const title = params.get('title');
     const durationParam = params.get('duration');
+    const focusParam = params.get('focus') === '1';
 
     if (title) setExamTitle(title);
     setExamId(eId);
+    setIsFocusMode(focusParam);
 
     const examCfg = EXAM_DURATIONS[eId] || { defaultMin: 1 as DurationMin, options: DEFAULT_DURATION_OPTIONS };
     setDurationOptions(examCfg.options);
     const parsed = Number(durationParam);
-    const requested = (Number.isFinite(parsed) ? parsed : examCfg.defaultMin) as DurationMin;
-    const chosen = (examCfg.options.includes(requested) ? requested : examCfg.defaultMin) as DurationMin;
+    const requested = Number.isFinite(parsed) ? parsed : examCfg.defaultMin;
+    // Allow custom durations in Focus Mode; for exams, fall back to default if not in allowed options.
+    const chosen =
+      focusParam && requested >= 1
+        ? Math.max(1, Math.min(180, Math.round(requested)))
+        : examCfg.options.includes(requested)
+          ? requested
+          : examCfg.defaultMin;
     setDurationMin(chosen);
     setTimeLeft(chosen * 60);
+    // If chosen duration is custom (not in options), include it so dropdown reflects it.
+    if (!examCfg.options.includes(chosen)) {
+      setDurationOptions((prev) => {
+        const next = Array.from(new Set([...(prev || DEFAULT_DURATION_OPTIONS), chosen])).sort((a, b) => a - b);
+        return next;
+      });
+    }
 
     // Default = English (same behaviour as earlier)
     let selectedText = '';
@@ -224,6 +255,19 @@ const TypingTest = () => {
     }
   };
 
+  // Focus Mode: start immediately (and keep input focused)
+  useEffect(() => {
+    if (loading) return;
+    if (!isFocusMode) return;
+    if (isFinished) return;
+    if (startTime) return;
+    // Start now
+    handleStart();
+    // Focus cursor
+    setTimeout(() => inputRef.current?.focus(), 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, isFocusMode]);
+
   // ── Input ──
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (isFinished) return;
@@ -242,6 +286,43 @@ const TypingTest = () => {
 
   // ── Finish ──
   const handleFinish = () => {
+    // Calculate final WPM (more accurate than last interval tick)
+    const now = Date.now();
+    const elapsedMin = startTime ? (now - startTime) / 60000 : durationMin;
+    const wordsTyped = userInput.trim() ? userInput.trim().split(/\s+/).length : 0;
+    const finalWpm = elapsedMin > 0 ? Math.round(wordsTyped / elapsedMin) : 0;
+    setWpm(finalWpm);
+
+    // Character accuracy snapshot
+    const typedChars = userInput.length;
+    let correctChars = 0;
+    for (let i = 0; i < typedChars; i++) {
+      if (userInput[i] === text[i]) correctChars++;
+    }
+    const errors = Math.max(0, typedChars - correctChars);
+
+    // Save session locally for monthly analytics
+    try {
+      const raw = localStorage.getItem(SESSIONS_KEY);
+      const prev = raw ? (JSON.parse(raw) as SessionRecord[]) : [];
+      const next: SessionRecord[] = Array.isArray(prev) ? prev.slice(-500) : [];
+      next.push({
+        ts: now,
+        examId: examId || 'default',
+        examTitle: examTitle || 'Typing Test',
+        durationMin: Number(durationMin || 1),
+        language,
+        wpm: finalWpm,
+        accuracy,
+        typedChars,
+        correctChars,
+        errors,
+      });
+      localStorage.setItem(SESSIONS_KEY, JSON.stringify(next));
+    } catch {
+      // ignore
+    }
+
     setIsFinished(true);
     confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#0ea5e9', '#ffffff', '#000000'] });
   };
@@ -323,6 +404,7 @@ const TypingTest = () => {
         </div>
 
         {/* ── Language Toggle Bar ── */}
+        {!isFocusMode && (
         <div className="bg-white border border-slate-200 rounded-2xl p-3 mb-6 flex flex-wrap items-center gap-3">
           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider px-2 hidden md:block">भाषा / Language</span>
           <div className="flex-1 md:flex-none min-w-[240px]">
@@ -400,6 +482,25 @@ const TypingTest = () => {
             </button>
           )}
         </div>
+        )}
+
+        {/* Focus Mode banner */}
+        {isFocusMode && (
+          <div className="bg-black text-white rounded-2xl px-5 py-3 mb-6 flex items-center justify-between">
+            <div>
+              <p className="font-extrabold tracking-tight">Focus Mode</p>
+              <p className="text-xs text-slate-300">
+                Duration: <span className="font-bold text-sky-400">{durationMin} min</span> • Distraction-free view enabled
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/')}
+              className="bg-white text-black px-4 py-2 rounded-xl font-bold hover:bg-sky-100 transition-colors"
+            >
+              Exit
+            </button>
+          </div>
+        )}
 
         {/* ── Hindi system notice ── */}
         {isHindi && (
@@ -486,21 +587,58 @@ const TypingTest = () => {
 
             {/* Result banner */}
             {isFinished && (
-              <div className="mt-2 bg-sky-900 text-white p-8 rounded-3xl flex items-center justify-between">
-                <div>
-                  <h3 className="text-2xl font-bold mb-1">
-                    {isHindi ? 'शाबाश! बहुत अच्छा!' : 'Great Job!'}
-                  </h3>
-                  <p className="text-sky-200">
-                    You completed the test with <strong>{wpm} WPM</strong> and <strong>{accuracy}%</strong> accuracy.
-                  </p>
+              <div className="mt-2 bg-sky-900 text-white p-8 rounded-3xl">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                  <div>
+                    <h3 className="text-2xl font-bold mb-1">
+                      {isHindi ? 'शाबाश! बहुत अच्छा!' : 'Great Job!'}
+                    </h3>
+                    <p className="text-sky-200">
+                      Result: <strong>{wpm} WPM</strong> • <strong>{accuracy}%</strong> accuracy • <strong>{durationMin} min</strong>
+                    </p>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => navigate('/analytics')}
+                      className="bg-white text-black px-6 py-3 rounded-xl font-bold hover:bg-sky-100 transition-colors"
+                    >
+                      View Analytics
+                    </button>
+                    <button
+                      onClick={() => navigate('/exams')}
+                      className="bg-black/30 border border-white/20 text-white px-6 py-3 rounded-xl font-bold hover:bg-black/40 transition-colors"
+                    >
+                      Back to Exams
+                    </button>
+                  </div>
                 </div>
-                <button
-                  onClick={() => navigate('/exams')}
-                  className="bg-white text-black px-8 py-3 rounded-xl font-bold hover:bg-sky-100 transition-colors"
-                >
-                  Back to Exams
-                </button>
+
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-white/10 rounded-2xl p-4">
+                    <p className="text-xs font-bold text-sky-200 uppercase">Typed Characters</p>
+                    <p className="text-2xl font-extrabold">{userInput.length}</p>
+                  </div>
+                  <div className="bg-white/10 rounded-2xl p-4">
+                    <p className="text-xs font-bold text-sky-200 uppercase">Correct Characters</p>
+                    <p className="text-2xl font-extrabold">
+                      {(() => {
+                        let c = 0;
+                        for (let i = 0; i < userInput.length; i++) if (userInput[i] === text[i]) c++;
+                        return c;
+                      })()}
+                    </p>
+                  </div>
+                  <div className="bg-white/10 rounded-2xl p-4">
+                    <p className="text-xs font-bold text-sky-200 uppercase">Errors</p>
+                    <p className="text-2xl font-extrabold text-amber-200">
+                      {(() => {
+                        let c = 0;
+                        for (let i = 0; i < userInput.length; i++) if (userInput[i] === text[i]) c++;
+                        return Math.max(0, userInput.length - c);
+                      })()}
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
           </div>

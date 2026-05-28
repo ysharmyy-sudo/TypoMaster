@@ -7,6 +7,8 @@ import { motion } from 'framer-motion';
 const Home = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const [showFocusModal, setShowFocusModal] = useState(false);
+  const [focusMinutes, setFocusMinutes] = useState(10);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 400);
@@ -151,14 +153,18 @@ const Home = () => {
           </div>
           <div className="grid grid-cols-2 gap-4">
             {[
-              { title: 'Real-time Feedback', icon: <Clock className="text-sky-500 mb-2" />, to: '/typing-test' },
-              { title: 'Focus Mode', icon: <Target className="text-sky-500 mb-2" />, to: '/tests' },
-              { title: 'Detailed Analytics', icon: <BarChart3 className="text-sky-500 mb-2" />, to: '/tests' },
+              { title: 'Real-time Feedback', icon: <Clock className="text-sky-500 mb-2" />, onClick: () => navigate('/typing-test') },
+              { title: 'Focus Mode', icon: <Target className="text-sky-500 mb-2" />, onClick: () => setShowFocusModal(true) },
+              { title: 'Detailed Analytics', icon: <BarChart3 className="text-sky-500 mb-2" />, onClick: () => navigate('/analytics') },
               { title: 'Pro Games', icon: <Gamepad2 className="text-sky-500 mb-2" />, to: '/games' },
             ].map((card, i) => (
               <button
                 key={card.title}
-                onClick={() => navigate(card.to)}
+                onClick={() => {
+                  if ((card as any).onClick) return (card as any).onClick();
+                  // fallback
+                  navigate((card as any).to);
+                }}
                 className={`text-left bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow border border-transparent hover:border-sky-200 ${
                   i === 0 ? 'mt-8' : i === 3 ? '-mt-8' : ''
                 }`}
@@ -170,6 +176,73 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+      {/* Focus Mode Modal */}
+      {showFocusModal && (
+        <div className="fixed inset-0 z-[1000] bg-black/50 flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden">
+            <div className="bg-black px-6 py-5">
+              <h3 className="text-white text-xl font-extrabold">Focus Mode</h3>
+              <p className="text-slate-400 text-sm mt-1">
+                Choose a time. We will start the typing test immediately with minimum distractions.
+              </p>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Set focus time (minutes)</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={180}
+                  value={focusMinutes}
+                  onChange={(e) => setFocusMinutes(Number(e.target.value || 10))}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent outline-none font-bold"
+                />
+                <div className="flex gap-2 mt-3 flex-wrap">
+                  {[1, 3, 5, 10, 15].map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setFocusMinutes(m)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-bold border transition-colors ${
+                        focusMinutes === m
+                          ? 'bg-sky-500 border-sky-500 text-black'
+                          : 'bg-white border-slate-200 text-slate-700 hover:border-sky-300'
+                      }`}
+                    >
+                      {m} min
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowFocusModal(false)}
+                  className="flex-1 py-3 rounded-xl font-bold border border-slate-200 text-slate-700 hover:border-slate-400 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const m = Math.max(1, Math.min(180, Math.round(Number(focusMinutes || 10))));
+                    setShowFocusModal(false);
+                    navigate(`/typing-test?focus=1&duration=${m}&title=${encodeURIComponent('Focus Mode')}`);
+                  }}
+                  className="flex-1 py-3 rounded-xl font-bold bg-black text-white hover:bg-slate-900 transition-colors"
+                >
+                  Start Now
+                </button>
+              </div>
+              <p className="text-xs text-slate-500">
+                Note: We can only reduce in-app distractions (hide header/footer). System-wide notifications are controlled by your device settings.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
