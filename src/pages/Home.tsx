@@ -150,22 +150,23 @@ const Home = () => {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white p-6 rounded-2xl shadow-sm mt-8">
-              <Clock className="text-sky-500 mb-2" />
-              <p className="font-bold">Real-time Feedback</p>
-            </div>
-            <div className="bg-white p-6 rounded-2xl shadow-sm">
-              <Target className="text-sky-500 mb-2" />
-              <p className="font-bold">Focus Mode</p>
-            </div>
-            <div className="bg-white p-6 rounded-2xl shadow-sm">
-              <BarChart3 className="text-sky-500 mb-2" />
-              <p className="font-bold">Detailed Analytics</p>
-            </div>
-            <div className="bg-white p-6 rounded-2xl shadow-sm -mt-8">
-              <Gamepad2 className="text-sky-500 mb-2" />
-              <p className="font-bold">Pro Games</p>
-            </div>
+            {[
+              { title: 'Real-time Feedback', icon: <Clock className="text-sky-500 mb-2" />, to: '/typing-test' },
+              { title: 'Focus Mode', icon: <Target className="text-sky-500 mb-2" />, to: '/tests' },
+              { title: 'Detailed Analytics', icon: <BarChart3 className="text-sky-500 mb-2" />, to: '/tests' },
+              { title: 'Pro Games', icon: <Gamepad2 className="text-sky-500 mb-2" />, to: '/games' },
+            ].map((card, i) => (
+              <button
+                key={card.title}
+                onClick={() => navigate(card.to)}
+                className={`text-left bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow border border-transparent hover:border-sky-200 ${
+                  i === 0 ? 'mt-8' : i === 3 ? '-mt-8' : ''
+                }`}
+              >
+                {card.icon}
+                <p className="font-bold">{card.title}</p>
+              </button>
+            ))}
           </div>
         </div>
       </section>

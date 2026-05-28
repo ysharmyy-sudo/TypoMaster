@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageSkeleton } from '../components/SkeletonLoader';
-import { Search, MapPin, Building2, Landmark, ArrowRight, ShieldCheck, Zap, Keyboard } from 'lucide-react';
+import { Search, MapPin, Building2, Landmark, ArrowRight, ShieldCheck, Zap } from 'lucide-react';
 
 const Exams = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Central');
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 300);
@@ -24,60 +25,68 @@ const Exams = () => {
     durationOptionsMin?: Array<1 | 3 | 5 | 10 | 15>;
   };
 
-  const examsData: Record<string, any[]> = {
+  const examsData: Record<string, ExamCard[]> = {
     'Central': [
       { id: 'ssc-cgl', title: 'SSC CGL', detail: 'Skill Test for Tax Assistant & Auditor', posts: '7,500+ Posts', defaultDurationMin: 15, durationOptionsMin: [1, 3, 5, 10, 15] },
       { id: 'ssc-chsl', title: 'SSC CHSL', detail: 'Data Entry Operator & LDC', posts: '4,500+ Posts', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
       { id: 'stenographer', title: 'Stenographer', detail: 'Grade C & D Skill Test', posts: '1,200+ Posts', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
       { id: 'rrb-ntpc', title: 'RRB NTPC', detail: 'Railway Clerical Typing Test', posts: '35,000+ Posts', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
-    ],
-    'National': [
-      { id: 'ibps-po', title: 'IBPS PO', detail: 'Descriptive Writing & Documentation', posts: '6,400+ Posts', defaultDurationMin: 15, durationOptionsMin: [1, 3, 5, 10, 15] },
-      { id: 'sbi-clerk', title: 'SBI Clerk', detail: 'Junior Associate Mains Typing', posts: '8,000+ Posts', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
-      { id: 'rbi-asst', title: 'RBI Assistant', detail: 'Language Proficiency & Typing', posts: '950+ Posts', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
-      { id: 'lic-aao', title: 'LIC AAO', detail: 'Administrative Assistant Test', posts: '300+ Posts', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
-    ],
-    'Statewise': [
-      { id: 'upsssc', title: 'UPSSSC VDO', detail: 'Junior Assistant Typing (Hindi/Eng)', posts: '1,262 Posts', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
-      { id: 'bssc', title: 'Bihar SSC', detail: 'Inter Level Typing Test', posts: '11,000+ Posts', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
-      { id: 'mpsc', title: 'Maharashtra PSC', detail: 'Typing Certificate Exam', posts: '5,000+ Posts', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
-      { id: 'hssc', title: 'Haryana SSC', detail: 'Clerk & DEO Typing Test', posts: '3,000+ Posts', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
-    ],
-    'Typing Tests': [
-      // From your screenshots
+      // Added (from your screenshots) — merged into existing sections
       { id: 'dsssb-ja-pa-spa', title: 'DSSSB JJA / PA / SPA', detail: 'Typing Test Series', posts: 'New', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
       { id: 'dsssb-ja-ldc-dass', title: 'DSSSB Junior Assistant / LDC / DASS IV', detail: 'Typing Test Series', posts: 'New', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
       { id: 'delhi-hc-jja', title: 'Delhi High Court JJA', detail: 'Junior Judicial Assistant Typing Test Series', posts: 'New', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
       { id: 'delhi-hc-pa-spa', title: 'Delhi High Court PA / SPA', detail: 'Typing Tests', posts: 'New', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
       { id: 'supreme-court-jca', title: 'Supreme Court JCA', detail: 'Junior Court Assistant Typing Tests', posts: 'New', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
       { id: 'rrb-ntpc-gdce', title: 'RRB NTPC / GDCE', detail: 'Typing Test Series', posts: 'New', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
-      { id: 'allahabad-hc-ja-steno', title: 'Allahabad HC JA & Apprentices', detail: 'JA / Paid Apprentices / Steno Typing Tests', posts: 'New', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
-      { id: 'allahabad-hc-ro-aro', title: 'Allahabad HC RO / ARO', detail: 'Typing Test Series', posts: 'New', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
+      { id: 'delhi-police-typing-course', title: 'Delhi Police', detail: 'Typing Course Test Series', posts: 'New', defaultDurationMin: 5, durationOptionsMin: [1, 3, 5, 10, 15] },
+      { id: 'delhi-police-awo-tpo', title: 'Delhi Police AWO / TPO', detail: 'Typing Test Course', posts: 'New', defaultDurationMin: 5, durationOptionsMin: [1, 3, 5, 10, 15] },
+      { id: 'bsf-hcm', title: 'BSF Head Constable Ministerial (HCM)', detail: 'Typing Test Course', posts: 'New', defaultDurationMin: 5, durationOptionsMin: [1, 3, 5, 10, 15] },
+      { id: 'crpf-hcm', title: 'CRPF HCM', detail: 'Typing Practice / Paragraphs', posts: 'New', defaultDurationMin: 5, durationOptionsMin: [1, 3, 5, 10, 15] },
+    ],
+    'National': [
+      { id: 'ibps-po', title: 'IBPS PO', detail: 'Descriptive Writing & Documentation', posts: '6,400+ Posts', defaultDurationMin: 15, durationOptionsMin: [1, 3, 5, 10, 15] },
+      { id: 'sbi-clerk', title: 'SBI Clerk', detail: 'Junior Associate Mains Typing', posts: '8,000+ Posts', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
+      { id: 'rbi-asst', title: 'RBI Assistant', detail: 'Language Proficiency & Typing', posts: '950+ Posts', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
+      { id: 'lic-aao', title: 'LIC AAO', detail: 'Administrative Assistant Test', posts: '300+ Posts', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
+      // Added (from your screenshots)
       { id: 'nvs-jsa', title: 'NVS Junior Secretariat Assistant', detail: 'Typing Tests', posts: 'New', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
       { id: 'csir-jsa-english', title: 'CSIR JSA (English)', detail: 'Typing Test Series', posts: 'New', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
       { id: 'ncert-ldc', title: 'NCERT LDC (English)', detail: 'Typing Tests', posts: 'New', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
       { id: 'kvs-jsa', title: 'KVS JSA', detail: 'Typing Practice Test Series', posts: 'New', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
       { id: 'dda-jsa', title: 'DDA JSA', detail: 'Typing Practice Test Series', posts: 'New', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
-      { id: 'up-police-typing', title: 'UP Police (UPPRPB) SI/ASI/CO', detail: 'Computer Operator / SI / ASI Typing Tests', posts: 'New', defaultDurationMin: 5, durationOptionsMin: [1, 3, 5, 10, 15] },
-      { id: 'upsssc-ja', title: 'UPSSSC Junior Assistant', detail: 'Typing Skill Test Series', posts: 'New', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
-      { id: 'delhi-police-typing-course', title: 'Delhi Police', detail: 'Typing Course Test Series', posts: 'New', defaultDurationMin: 5, durationOptionsMin: [1, 3, 5, 10, 15] },
-      { id: 'delhi-police-awo-tpo', title: 'Delhi Police AWO / TPO', detail: 'Typing Test Course', posts: 'New', defaultDurationMin: 5, durationOptionsMin: [1, 3, 5, 10, 15] },
-      { id: 'bsf-hcm', title: 'BSF Head Constable Ministerial (HCM)', detail: 'Typing Test Course', posts: 'New', defaultDurationMin: 5, durationOptionsMin: [1, 3, 5, 10, 15] },
-      { id: 'crpf-hcm', title: 'CRPF HCM', detail: 'Typing Paragraph PDFs / Practice', posts: 'New', defaultDurationMin: 5, durationOptionsMin: [1, 3, 5, 10, 15] },
-      { id: 'jnu-ja', title: 'JNU Junior Assistant', detail: 'Typing Test Course', posts: 'New', defaultDurationMin: 5, durationOptionsMin: [1, 3, 5, 10, 15] },
       { id: 'epfo-ssa', title: 'EPFO SSA', detail: 'Social Security Assistant Typing Course', posts: 'New', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
       { id: 'cbse-typing', title: 'CBSE English Typing', detail: 'Typing Skill Test', posts: 'New', defaultDurationMin: 5, durationOptionsMin: [1, 3, 5, 10, 15] },
       { id: 'drdo-assistant-typing', title: 'DRDO Assistant', detail: 'Typing Test Course', posts: 'New', defaultDurationMin: 5, durationOptionsMin: [1, 3, 5, 10, 15] },
       { id: 'aiims-cre-typing', title: 'AIIMS CRE (English)', detail: 'Typing Skill Test', posts: 'New', defaultDurationMin: 5, durationOptionsMin: [1, 3, 5, 10, 15] },
-    ] as ExamCard[],
+      { id: 'jnu-ja', title: 'JNU Junior Assistant', detail: 'Typing Test Course', posts: 'New', defaultDurationMin: 5, durationOptionsMin: [1, 3, 5, 10, 15] },
+    ],
+    'Statewise': [
+      { id: 'upsssc', title: 'UPSSSC VDO', detail: 'Junior Assistant Typing (Hindi/Eng)', posts: '1,262 Posts', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
+      { id: 'bssc', title: 'Bihar SSC', detail: 'Inter Level Typing Test', posts: '11,000+ Posts', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
+      { id: 'mpsc', title: 'Maharashtra PSC', detail: 'Typing Certificate Exam', posts: '5,000+ Posts', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
+      { id: 'hssc', title: 'Haryana SSC', detail: 'Clerk & DEO Typing Test', posts: '3,000+ Posts', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
+      // Added (from your screenshots)
+      { id: 'allahabad-hc-ja-steno', title: 'Allahabad HC JA & Apprentices', detail: 'JA / Apprentices / Steno Typing Tests', posts: 'New', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
+      { id: 'allahabad-hc-ro-aro', title: 'Allahabad HC RO / ARO', detail: 'Typing Test Series', posts: 'New', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
+      { id: 'up-police-typing', title: 'UP Police (UPPRPB) SI/ASI/CO', detail: 'Computer Operator / SI / ASI Typing Tests', posts: 'New', defaultDurationMin: 5, durationOptionsMin: [1, 3, 5, 10, 15] },
+      { id: 'upsssc-ja', title: 'UPSSSC Junior Assistant', detail: 'Typing Skill Test Series', posts: 'New', defaultDurationMin: 10, durationOptionsMin: [1, 3, 5, 10, 15] },
+    ],
   };
 
   const tabs = [
     { name: 'Central', icon: <Building2 size={18} /> },
     { name: 'National', icon: <Landmark size={18} /> },
     { name: 'Statewise', icon: <MapPin size={18} /> },
-    { name: 'Typing Tests', icon: <Keyboard size={18} /> },
   ];
+
+  const list = examsData[activeTab] || [];
+  const q = searchTerm.trim().toLowerCase();
+  const filtered = q
+    ? list.filter((x) => {
+        const hay = `${x.title} ${x.detail} ${x.posts}`.toLowerCase();
+        return hay.includes(q);
+      })
+    : list;
 
   return (
     <div className="min-h-screen bg-slate-50 py-12 px-8">
@@ -146,11 +155,13 @@ const Exams = () => {
                 type="text" 
                 placeholder="Search for exam name (e.g. SSC, BSSC, UPSSSC)..." 
                 className="w-full px-4 py-2 outline-none"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {examsData[activeTab].map((exam) => (
+              {filtered.map((exam) => (
                 <div key={exam.id} className="bg-white border border-slate-100 rounded-3xl p-8 hover:border-sky-500 transition-all hover:shadow-xl group">
                   <div className="flex justify-between items-start mb-6">
                     <div className="bg-sky-50 p-3 rounded-2xl text-sky-600 group-hover:bg-sky-500 group-hover:text-white transition-colors">
