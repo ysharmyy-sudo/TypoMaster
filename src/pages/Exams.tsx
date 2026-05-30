@@ -79,6 +79,34 @@ const Exams = () => {
     { name: 'Statewise', icon: <MapPin size={18} /> },
   ];
 
+  const ORG_LOGO: Record<string, string> = {
+    ssc: '/exam-logos/ssc.jpg',
+    rrb: '/exam-logos/rrb.svg',
+    ibps: '/exam-logos/ibps.png',
+    sbi: '/exam-logos/sbi.svg',
+    rbi: '/exam-logos/rbi.svg',
+    upsc: '/exam-logos/upsc.png',
+  };
+
+  const getOrgKey = (examId: string, examTitle?: string) => {
+    const first = (examId || '').split('-')[0]?.toLowerCase();
+    if (first && ORG_LOGO[first]) return first;
+
+    const t = (examTitle || '').toLowerCase();
+    if (t.includes('ssc')) return 'ssc';
+    if (t.includes('rrb') || t.includes('railway')) return 'rrb';
+    if (t.includes('ibps')) return 'ibps';
+    if (t.includes('sbi')) return 'sbi';
+    if (t.includes('rbi')) return 'rbi';
+    if (t.includes('upsc')) return 'upsc';
+    return '';
+  };
+
+  const getLogoSrc = (examId: string, examTitle?: string) => {
+    const k = getOrgKey(examId, examTitle);
+    return k ? ORG_LOGO[k] : '';
+  };
+
   const list = examsData[activeTab] || [];
   const q = searchTerm.trim().toLowerCase();
   const filtered = q
@@ -119,7 +147,17 @@ const Exams = () => {
                 onClick={() => navigate(`/typing-test?exam=${test.id}&title=${encodeURIComponent(test.title)}&duration=${test.duration}`)}
               >
                 <div>
-                  <p className="font-bold text-sm">{test.title}</p>
+                  <div className="flex items-center gap-2">
+                    {!!getLogoSrc(test.id, test.title) && (
+                      <img
+                        src={getLogoSrc(test.id, test.title)}
+                        alt=""
+                        className="h-5 w-5 object-contain"
+                        loading="lazy"
+                      />
+                    )}
+                    <p className="font-bold text-sm">{test.title}</p>
+                  </div>
                   <p className="text-xs text-slate-400">{test.time} • {test.level}</p>
                 </div>
                 <ArrowRight size={16} className="text-slate-300 group-hover:text-sky-500 transition-colors" />
@@ -171,7 +209,17 @@ const Exams = () => {
                       {exam.posts}
                     </span>
                   </div>
-                  <h3 className="text-2xl font-bold mb-2">{exam.title}</h3>
+                  <div className="flex items-center gap-3 mb-2">
+                    {!!getLogoSrc(exam.id, exam.title) && (
+                      <img
+                        src={getLogoSrc(exam.id, exam.title)}
+                        alt={`${exam.title} logo`}
+                        className="h-8 w-8 object-contain"
+                        loading="lazy"
+                      />
+                    )}
+                    <h3 className="text-2xl font-bold">{exam.title}</h3>
+                  </div>
                   <p className="text-slate-500 mb-8">{exam.detail}</p>
                   <button 
                     onClick={() => {

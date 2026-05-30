@@ -1,15 +1,14 @@
 # Exam logos
 
-Put **official** exam/organization logos in this folder so they can be shown in the Profile section.
+Put **official** exam/organization logos in this folder so they can be shown on the Exams page (near exam names).
 
 Current file names used by the UI:
-- `ssc.svg`
+- `ssc.jpg`
 - `rrb.svg`
-- `ibps.svg`
+- `ibps.png`
 - `sbi.svg`
 - `rbi.svg`
-- `upsc.svg`
+- `upsc.png`
 - `placeholder.svg` (fallback)
 
-You can use `.svg` or `.png` (if you switch the `src` paths in `src/components/ProfileSection.tsx`).
-
+You can use `.svg` / `.png` / `.jpg` — if you change paths in `src/pages/Exams.tsx`.
