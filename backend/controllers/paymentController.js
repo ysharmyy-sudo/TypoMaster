@@ -37,9 +37,11 @@ exports.createOrder = async (req, res) => {
     }
 
     const options = {
-      amount: Number(pricing.amount) * 100,
+      // Razorpay expects amount in the smallest currency unit (paise for INR) as an integer
+      amount: Math.round(Number(pricing.amount) * 100),
       currency: pricing.currency,
       receipt: `rcpt_${Date.now()}`,
+      payment_capture: 1,
       notes: {
         userId: String(user._id),
         plan,
@@ -59,7 +61,16 @@ exports.createOrder = async (req, res) => {
     });
 
     // ✅ key_id is safe to expose; never expose key_secret.
-    res.json({ success: true, order, keyId: process.env.RAZORPAY_KEY_ID });
+    res.json({
+      success: true,
+      // keep backward compatibility with existing frontend
+      order,
+      // normalized fields (easier + safer for frontend)
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      keyId: String(process.env.RAZORPAY_KEY_ID || "").trim(),
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

@@ -40,17 +40,26 @@ const Pricing = () => {
       if (!ok) throw new Error('Unable to load Razorpay. Please check your internet connection and try again.');
 
       // Create order on backend (amount is computed server-side)
-      const res = await apiPost<{ success: boolean; order: any; keyId: string; message?: string }>(
+      const res = await apiPost<{
+        success: boolean;
+        order?: any;
+        orderId?: string;
+        amount?: number;
+        currency?: string;
+        keyId: string;
+        message?: string;
+      }>(
         '/api/payment/create-order',
         { plan }
       );
       if (!res?.success) throw new Error(res?.message || 'Order create failed');
+      const orderId = res.orderId || res.order?.id;
+      const keyId = res.keyId;
+      if (!orderId || !keyId) throw new Error('Invalid order response from server (missing orderId/keyId)');
 
       const user = auth.currentUser;
       const options = {
-        key: res.keyId, // safe/public
-        amount: res.order.amount,
-        currency: res.order.currency,
+        key: keyId, // safe/public
         name: 'Pariksha Typing Tutor',
         description:
           plan === 'm1'
@@ -60,7 +69,10 @@ const Pricing = () => {
             : plan === 'm6'
             ? 'Premium (6 Months)'
             : 'Premium (12 Months)',
-        order_id: res.order.id,
+        // IMPORTANT:
+        // When order_id is provided, Razorpay uses order's amount/currency.
+        // Passing amount/currency again can cause 400 if there is ANY mismatch.
+        order_id: orderId,
         prefill: {
           name: user.displayName || (user.email ? user.email.split('@')[0] : ''),
           email: user.email || '',
@@ -84,6 +96,8 @@ const Pricing = () => {
 
             setPremium(true);
             navigate('/');
+          } catch (err: any) {
+            setError(err?.message || 'Payment verification failed. Please contact support.');
           } finally {
             setLoadingPlan(null);
           }
@@ -95,6 +109,9 @@ const Pricing = () => {
 
       const rzp = new (window as any).Razorpay(options);
       rzp.on('payment.failed', (resp: any) => {
+        // Log full payload for debugging (includes error.code / error.reason / error.metadata)
+        // eslint-disable-next-line no-console
+        console.error('Razorpay payment.failed', resp);
         setError(resp?.error?.description || resp?.error?.reason || 'Payment failed. Please try again.');
         setLoadingPlan(null);
       });
