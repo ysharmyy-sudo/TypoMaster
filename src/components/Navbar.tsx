@@ -1,13 +1,16 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Keyboard, Gamepad2, Trophy, User, LogOut } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
+import { logoutAndClearTokens } from '../utils/logout';
 
 const Navbar = () => {
-  const { user, setUser } = useAppContext();
+  const { user, setUser, setPremium } = useAppContext();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await logoutAndClearTokens();
     setUser(null);
+    setPremium(false);
     navigate('/login');
   };
 

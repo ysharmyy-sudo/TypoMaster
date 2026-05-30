@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="120" viewBox="0 0 220 120" role="img" aria-label="Logo placeholder">
+  <rect x="2" y="2" width="216" height="116" rx="14" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="4"/>
+  <path d="M45 80 L75 50 L105 80 L135 55 L175 80" fill="none" stroke="#94a3b8" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="70" cy="45" r="8" fill="#94a3b8"/>
+  <text x="110" y="104" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#64748b">
+    Add official logo
+  </text>
+</svg>
+
