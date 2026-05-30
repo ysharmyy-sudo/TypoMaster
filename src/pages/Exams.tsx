@@ -79,18 +79,55 @@ const Exams = () => {
     { name: 'Statewise', icon: <MapPin size={18} /> },
   ];
 
+  /**
+   * Organization-level logos (official where available).
+   * You can add more org logos in: public/exam-logos/
+   */
   const ORG_LOGO: Record<string, string> = {
+    // already present
     ssc: '/exam-logos/ssc.jpg',
     rrb: '/exam-logos/rrb.svg',
     ibps: '/exam-logos/ibps.png',
     sbi: '/exam-logos/sbi.svg',
     rbi: '/exam-logos/rbi.svg',
     upsc: '/exam-logos/upsc.png',
+
+    // not yet added (falls back to placeholder until you add these files)
+    dsssb: '/exam-logos/dsssb.png',
+    'delhi-hc': '/exam-logos/delhi-hc.png',
+    'supreme-court': '/exam-logos/supreme-court.png',
+    'delhi-police': '/exam-logos/delhi-police.png',
+    bsf: '/exam-logos/bsf.png',
+    crpf: '/exam-logos/crpf.png',
+    'allahabad-hc': '/exam-logos/allahabad-hc.png',
+    upsssc: '/exam-logos/upsssc.png',
+    bssc: '/exam-logos/bssc.png',
+    mpsc: '/exam-logos/mpsc.png',
+    hssc: '/exam-logos/hssc.png',
+    lic: '/exam-logos/lic.png',
+    nvs: '/exam-logos/nvs.png',
+    csir: '/exam-logos/csir.png',
+    ncert: '/exam-logos/ncert.png',
+    kvs: '/exam-logos/kvs.png',
+    dda: '/exam-logos/dda.png',
+    epfo: '/exam-logos/epfo.png',
+    cbse: '/exam-logos/cbse.png',
+    drdo: '/exam-logos/drdo.png',
+    aiims: '/exam-logos/aiims.png',
+    jnu: '/exam-logos/jnu.png',
+    upprpb: '/exam-logos/upprpb.png',
   };
 
   const getOrgKey = (examId: string, examTitle?: string) => {
-    const first = (examId || '').split('-')[0]?.toLowerCase();
+    const id = (examId || '').toLowerCase();
+    const first = id.split('-')[0] || '';
     if (first && ORG_LOGO[first]) return first;
+
+    // custom id patterns
+    if (id.startsWith('delhi-hc-')) return 'delhi-hc';
+    if (id.startsWith('delhi-police-')) return 'delhi-police';
+    if (id.startsWith('supreme-court-')) return 'supreme-court';
+    if (id.startsWith('allahabad-hc-')) return 'allahabad-hc';
 
     const t = (examTitle || '').toLowerCase();
     if (t.includes('ssc')) return 'ssc';
@@ -99,12 +136,67 @@ const Exams = () => {
     if (t.includes('sbi')) return 'sbi';
     if (t.includes('rbi')) return 'rbi';
     if (t.includes('upsc')) return 'upsc';
+    if (t.includes('dsssb')) return 'dsssb';
+    if (t.includes('delhi high court') || t.includes('delhi hc')) return 'delhi-hc';
+    if (t.includes('supreme court')) return 'supreme-court';
+    if (t.includes('delhi police')) return 'delhi-police';
+    if (t.includes('bsf')) return 'bsf';
+    if (t.includes('crpf')) return 'crpf';
+    if (t.includes('allahabad')) return 'allahabad-hc';
+    if (t.includes('upsssc')) return 'upsssc';
+    if (t.includes('bihar ssc') || t.includes('bssc')) return 'bssc';
+    if (t.includes('mpsc')) return 'mpsc';
+    if (t.includes('hssc')) return 'hssc';
+    if (t.includes('lic')) return 'lic';
+    if (t.includes('nvs')) return 'nvs';
+    if (t.includes('csir')) return 'csir';
+    if (t.includes('ncert')) return 'ncert';
+    if (t.includes('kvs')) return 'kvs';
+    if (t.includes('dda')) return 'dda';
+    if (t.includes('epfo')) return 'epfo';
+    if (t.includes('cbse')) return 'cbse';
+    if (t.includes('drdo')) return 'drdo';
+    if (t.includes('aiims')) return 'aiims';
+    if (t.includes('jnu')) return 'jnu';
+    if (t.includes('up police') || t.includes('upprpb')) return 'upprpb';
     return '';
   };
 
-  const getLogoSrc = (examId: string, examTitle?: string) => {
-    const k = getOrgKey(examId, examTitle);
-    return k ? ORG_LOGO[k] : '';
+  const ExamLogo = ({
+    examId,
+    examTitle,
+    size = 32,
+  }: {
+    examId: string;
+    examTitle?: string;
+    size?: number;
+  }) => {
+    const [idx, setIdx] = useState(0);
+    const orgKey = getOrgKey(examId, examTitle);
+    const orgLogo = orgKey ? ORG_LOGO[orgKey] : '';
+
+    // Hybrid approach:
+    // 1) Try per-exam logo (if you add it) => /public/exam-logos/exams/{examId}.(png|svg|jpg)
+    // 2) Fallback to organization logo
+    // 3) Fallback to placeholder
+    const candidates = [
+      `/exam-logos/exams/${examId}.png`,
+      `/exam-logos/exams/${examId}.svg`,
+      `/exam-logos/exams/${examId}.jpg`,
+      orgLogo,
+      '/exam-logos/placeholder.svg',
+    ].filter(Boolean);
+
+    return (
+      <img
+        src={candidates[Math.min(idx, candidates.length - 1)]}
+        alt=""
+        className="object-contain"
+        style={{ width: size, height: size }}
+        loading="lazy"
+        onError={() => setIdx((v) => Math.min(v + 1, candidates.length - 1))}
+      />
+    );
   };
 
   const list = examsData[activeTab] || [];
@@ -148,14 +240,7 @@ const Exams = () => {
               >
                 <div>
                   <div className="flex items-center gap-2">
-                    {!!getLogoSrc(test.id, test.title) && (
-                      <img
-                        src={getLogoSrc(test.id, test.title)}
-                        alt=""
-                        className="h-5 w-5 object-contain"
-                        loading="lazy"
-                      />
-                    )}
+                    <ExamLogo examId={test.id} examTitle={test.title} size={20} />
                     <p className="font-bold text-sm">{test.title}</p>
                   </div>
                   <p className="text-xs text-slate-400">{test.time} • {test.level}</p>
@@ -210,14 +295,7 @@ const Exams = () => {
                     </span>
                   </div>
                   <div className="flex items-center gap-3 mb-2">
-                    {!!getLogoSrc(exam.id, exam.title) && (
-                      <img
-                        src={getLogoSrc(exam.id, exam.title)}
-                        alt={`${exam.title} logo`}
-                        className="h-8 w-8 object-contain"
-                        loading="lazy"
-                      />
-                    )}
+                    <ExamLogo examId={exam.id} examTitle={exam.title} size={32} />
                     <h3 className="text-2xl font-bold">{exam.title}</h3>
                   </div>
                   <p className="text-slate-500 mb-8">{exam.detail}</p>
