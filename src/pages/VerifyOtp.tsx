@@ -143,6 +143,14 @@ const VerifyOtp = () => {
             {isResending ? 'Resending...' : 'Resend Code'}
           </button>
 
+          <button
+            type="button"
+            onClick={() => navigate('/login')}
+            className="w-full py-3 rounded-xl font-bold bg-slate-900 text-white hover:bg-black transition-colors"
+          >
+            Skip for now (Login)
+          </button>
+
           <p className="text-center text-slate-600 text-sm">
             Back to <Link to="/login" className="text-sky-600 font-bold hover:underline">Sign In</Link>
           </p>
@@ -153,4 +161,3 @@ const VerifyOtp = () => {
 };
 
 export default VerifyOtp;
-

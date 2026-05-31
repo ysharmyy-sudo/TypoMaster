@@ -116,7 +116,7 @@ const Login = () => {
             <Link to="/signup" className="text-sky-600 font-bold hover:underline">Create Account</Link>
           </p>
           <p className="text-center text-slate-500 text-xs">
-            If you just signed up, verify your email code on the{' '}
+            If you want, you can verify your email on the{' '}
             <Link to={`/verify?email=${encodeURIComponent(email.trim().toLowerCase())}`} className="text-sky-600 font-bold hover:underline">
               Verify page
             </Link>

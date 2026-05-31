@@ -36,7 +36,7 @@ const Signup = () => {
       });
 
       if (!res?.success) throw new Error(res?.message || 'Signup failed');
-      setInfo('Verification code sent to your email. Please verify to finish signup.');
+      setInfo('Account created. Verification code sent to your email (optional). You can verify now or login directly.');
       navigate(`/verify?email=${encodeURIComponent(eMail)}`);
     } catch (err: any) {
       setError(err?.message || 'Signup failed. Please try again.');
