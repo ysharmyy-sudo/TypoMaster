@@ -2,6 +2,34 @@ const nodemailer = require("nodemailer");
 
 let cachedTransporter = null;
 
+const sendViaResend = async ({ from, to, subject, html, text }) => {
+  const apiKey = (process.env.RESEND_API_KEY || "").trim();
+  if (!apiKey) throw new Error("Missing RESEND_API_KEY");
+
+  const payload = {
+    from,
+    to: Array.isArray(to) ? to : [to],
+    subject,
+    ...(html ? { html } : {}),
+    ...(text ? { text } : {}),
+  };
+
+  const resp = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await resp.json().catch(() => ({}));
+  if (!resp.ok) {
+    throw new Error(data?.message || data?.error || `Resend API error (${resp.status})`);
+  }
+  return data;
+};
+
 const getTransporter = () => {
   if (cachedTransporter) return cachedTransporter;
 
@@ -38,8 +66,14 @@ const getTransporter = () => {
 };
 
 exports.sendEmail = async ({ to, subject, html, text }) => {
-  const from = (process.env.SMTP_FROM || process.env.SMTP_USER || "").trim();
-  if (!from) throw new Error("Missing SMTP_FROM/SMTP_USER for email sender");
+  const from = (process.env.RESEND_FROM || process.env.SMTP_FROM || process.env.SMTP_USER || "").trim();
+  if (!from) throw new Error("Missing RESEND_FROM/SMTP_FROM/SMTP_USER for email sender");
+
+  // Prefer Resend (HTTPS) if configured. Works on hosts that block outbound SMTP.
+  const resendKey = (process.env.RESEND_API_KEY || "").trim();
+  if (resendKey) {
+    return sendViaResend({ from, to, subject, html, text });
+  }
 
   const transporter = getTransporter();
   return transporter.sendMail({

@@ -88,7 +88,7 @@ exports.signup = async (req, res) => {
       return res.status(500).json({
         success: false,
         message:
-          "Unable to send verification email. Please re-check SMTP_USER/SMTP_PASS (Gmail App Password) or use a transactional email provider.",
+          `Unable to send verification email (${mailErr?.message || "unknown error"}). If you're on Render, SMTP is often blocked/timeouts — set RESEND_API_KEY (recommended) or configure SMTP_HOST/SMTP_PORT=587.`,
       });
     }
     return res.json({ success: true, message: "Verification code sent to your email." });
@@ -131,7 +131,7 @@ exports.resendOtp = async (req, res) => {
       return res.status(500).json({
         success: false,
         message:
-          "Unable to resend verification email. Please re-check SMTP_USER/SMTP_PASS (Gmail App Password) or use a transactional email provider.",
+          `Unable to resend verification email (${mailErr?.message || "unknown error"}). If you're on Render, SMTP is often blocked/timeouts — set RESEND_API_KEY (recommended) or configure SMTP_HOST/SMTP_PORT=587.`,
       });
     }
     return res.json({ success: true, message: "Verification code resent." });
