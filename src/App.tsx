@@ -5,6 +5,7 @@ import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import VerifyOtp from './pages/VerifyOtp';
 import TypingTest from './pages/TypingTest';
 import Exams from './pages/Exams';
 import Tests from './pages/Tests';
@@ -77,6 +78,7 @@ const MainContent = () => {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/verify" element={<VerifyOtp />} />
           <Route path="/tests" element={<Tests />} />
           <Route path="/typing-test" element={<TypingTest />} />
           <Route path="/exams" element={<Exams />} />

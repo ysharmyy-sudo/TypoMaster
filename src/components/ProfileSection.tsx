@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { BarChart3, Camera, Crown, LogOut, Save, TrendingUp } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { logoutAndClearTokens } from '../utils/logout';
-import { updateProfile } from 'firebase/auth';
-import { auth } from '../firebase';
+import { apiPatch } from '../utils/api';
 
 type Session = {
   ts: number; // epoch ms
@@ -85,13 +84,7 @@ const ProfileSection = () => {
         // ignore
       }
 
-      // Best-effort: update Firebase profile photo URL (no upload, just storing the data URL)
-      try {
-        const u = auth.currentUser;
-        if (u) await updateProfile(u, { photoURL: dataUrl });
-      } catch {
-        // ignore
-      }
+      // Note: photo is stored locally (no backend upload in this project yet)
     };
     reader.readAsDataURL(file);
   };
@@ -103,12 +96,6 @@ const ProfileSection = () => {
     } catch {
       // ignore
     }
-    try {
-      const u = auth.currentUser;
-      if (u) await updateProfile(u, { photoURL: '' });
-    } catch {
-      // ignore
-    }
   };
 
   const handleSaveProfile = async () => {
@@ -117,8 +104,8 @@ const ProfileSection = () => {
     setIsSavingProfile(true);
     setProfileMsg('');
     try {
-      const u = auth.currentUser;
-      if (u) await updateProfile(u, { displayName: name });
+      // Persist name on backend (best-effort)
+      await apiPatch('/api/auth/profile', { name });
       setUser((prev: any) => ({ ...(prev || {}), name }));
       setProfileMsg('Profile updated.');
     } catch {

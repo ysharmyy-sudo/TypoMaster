@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { apiGet } from '../utils/api';
 
 interface AppContextType {
   trialsUsed: number;
@@ -20,6 +21,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return localStorage.getItem('isPremium') === 'true';
   });
   const [user, setUser] = useState<any>(null);
+
+  // Hydrate user from saved JWT (if present)
+  useEffect(() => {
+    let cancelled = false;
+    const token = (() => {
+      try {
+        return localStorage.getItem('ptt_token') || '';
+      } catch {
+        return '';
+      }
+    })();
+    if (!token) return;
+
+    void (async () => {
+      try {
+        const res = await apiGet<{ success: boolean; user: any }>('/api/auth/me');
+        if (cancelled) return;
+        if (res?.user) {
+          setUser(res.user);
+          setPremium(!!res.user.isPremium);
+        }
+      } catch {
+        // token may be invalid/expired
+        try {
+          localStorage.removeItem('ptt_token');
+        } catch {
+          // ignore
+        }
+        if (!cancelled) setUser(null);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('trialsUsed', trialsUsed.toString());

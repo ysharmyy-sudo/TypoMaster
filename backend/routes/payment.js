@@ -10,20 +10,20 @@ const {
   status,
 } = require("../controllers/paymentController");
 
-const auth = require("../middleware/auth");
+const authAny = require("../middleware/authAny");
 
 // Payment Links (no frontend key needed)
-router.post("/create-payment-link", auth, createPaymentLink);
-router.post("/confirm-payment-link", auth, confirmPaymentLink);
+router.post("/create-payment-link", authAny, createPaymentLink);
+router.post("/confirm-payment-link", authAny, confirmPaymentLink);
 
 // Orders (one-time)
-router.post("/create-order", auth, createOrder);
-router.post("/verify-order", auth, verifyOrderPayment);
+router.post("/create-order", authAny, createOrder);
+router.post("/verify-order", authAny, verifyOrderPayment);
 
 // Webhook (no auth; signature verified inside)
 router.post("/webhook", webhook);
 
 // Premium status
-router.get("/status", auth, status);
+router.get("/status", authAny, status);
 
 module.exports = router;

@@ -3,10 +3,9 @@ import { useAppContext } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { apiPost } from '../utils/api';
-import { auth } from '../firebase';
 
 const Pricing = () => {
-  const { setPremium } = useAppContext();
+  const { setPremium, user } = useAppContext();
   const navigate = useNavigate();
   const [error, setError] = useState('');
   type PaidPlanId = 'm1' | 'm3' | 'm6' | 'm12';
@@ -29,8 +28,8 @@ const Pricing = () => {
       setError('');
       setLoadingPlan(plan);
 
-      // User must be logged-in because backend verifies Firebase ID token
-      if (!auth.currentUser) {
+      // User must be logged-in (backend verifies app JWT)
+      if (!user) {
         setError('Please sign in to continue with payment.');
         navigate('/login');
         return;
@@ -57,7 +56,6 @@ const Pricing = () => {
       const keyId = res.keyId;
       if (!orderId || !keyId) throw new Error('Invalid order response from server (missing orderId/keyId)');
 
-      const user = auth.currentUser;
       const options = {
         key: keyId, // safe/public
         name: 'Pariksha Typing Tutor',
@@ -74,8 +72,8 @@ const Pricing = () => {
         // Passing amount/currency again can cause 400 if there is ANY mismatch.
         order_id: orderId,
         prefill: {
-          name: user.displayName || (user.email ? user.email.split('@')[0] : ''),
-          email: user.email || '',
+          name: user?.name || (user?.email ? user.email.split('@')[0] : ''),
+          email: user?.email || '',
         },
         notes: {
           plan,

@@ -1,5 +1,3 @@
-import { auth } from "../firebase";
-
 // NOTE:
 // - Prefer setting VITE_API_URL to your backend origin (example: https://your-backend.com)
 // - If not set, we fall back to same-origin in production, and localhost in dev.
@@ -17,14 +15,16 @@ const joinUrl = (base: string, path: string) => {
   return `${b}${p}`;
 };
 
-const getIdToken = async () => {
-  const u = auth.currentUser;
-  if (!u) return "";
-  return await u.getIdToken();
+const getAppToken = () => {
+  try {
+    return localStorage.getItem('ptt_token') || '';
+  } catch {
+    return '';
+  }
 };
 
 export const apiGet = async <T>(path: string): Promise<T> => {
-  const token = await getIdToken();
+  const token = getAppToken();
   try {
     const res = await fetch(joinUrl(API_URL, path), {
       headers: {
@@ -45,10 +45,32 @@ export const apiGet = async <T>(path: string): Promise<T> => {
 };
 
 export const apiPost = async <T>(path: string, body?: any): Promise<T> => {
-  const token = await getIdToken();
+  const token = getAppToken();
   try {
     const res = await fetch(joinUrl(API_URL, path), {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(body ?? {}),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data?.message || data?.error || 'Request failed');
+    return data as T;
+  } catch (err: any) {
+    if (err?.name === 'TypeError') {
+      throw new Error('Unable to reach the server. Please check your internet connection and backend URL (VITE_API_URL).');
+    }
+    throw err;
+  }
+};
+
+export const apiPatch = async <T>(path: string, body?: any): Promise<T> => {
+  const token = getAppToken();
+  try {
+    const res = await fetch(joinUrl(API_URL, path), {
+      method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
