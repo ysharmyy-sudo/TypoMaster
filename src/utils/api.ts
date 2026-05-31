@@ -1,11 +1,12 @@
 // NOTE:
 // - Prefer setting VITE_API_URL to your backend origin (example: https://your-backend.com)
-// - If not set, we fall back to same-origin in production, and localhost in dev.
+// - If not set, we fall back to localhost in dev.
+//   In production (e.g., Vercel + Render), you MUST set VITE_API_URL, otherwise requests will go to the frontend domain.
 const API_URL =
   import.meta.env.VITE_API_URL ||
-  (typeof window !== 'undefined' && window.location.hostname !== 'localhost'
-    ? window.location.origin
-    : 'http://localhost:5000');
+  (typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    ? 'http://localhost:5000'
+    : '');
 
 const joinUrl = (base: string, path: string) => {
   const b = (base || '').replace(/\/$/, '');
@@ -26,6 +27,7 @@ const getAppToken = () => {
 export const apiGet = async <T>(path: string): Promise<T> => {
   const token = getAppToken();
   try {
+    if (!API_URL) throw new Error('Backend URL missing. Please set VITE_API_URL in your frontend environment.');
     const res = await fetch(joinUrl(API_URL, path), {
       headers: {
         'Content-Type': 'application/json',
@@ -47,6 +49,7 @@ export const apiGet = async <T>(path: string): Promise<T> => {
 export const apiPost = async <T>(path: string, body?: any): Promise<T> => {
   const token = getAppToken();
   try {
+    if (!API_URL) throw new Error('Backend URL missing. Please set VITE_API_URL in your frontend environment.');
     const res = await fetch(joinUrl(API_URL, path), {
       method: 'POST',
       headers: {
@@ -69,6 +72,7 @@ export const apiPost = async <T>(path: string, body?: any): Promise<T> => {
 export const apiPatch = async <T>(path: string, body?: any): Promise<T> => {
   const token = getAppToken();
   try {
+    if (!API_URL) throw new Error('Backend URL missing. Please set VITE_API_URL in your frontend environment.');
     const res = await fetch(joinUrl(API_URL, path), {
       method: 'PATCH',
       headers: {

@@ -79,7 +79,18 @@ exports.signup = async (req, res) => {
       await user.save();
     }
 
-    await sendOtpEmail({ to: email, code: otp });
+    try {
+      await sendOtpEmail({ to: email, code: otp });
+    } catch (mailErr) {
+      // Helpful for Render logs
+      // eslint-disable-next-line no-console
+      console.error("❌ OTP email send failed:", mailErr?.message || mailErr);
+      return res.status(500).json({
+        success: false,
+        message:
+          "Unable to send verification email. Please re-check SMTP_USER/SMTP_PASS (Gmail App Password) or use a transactional email provider.",
+      });
+    }
     return res.json({ success: true, message: "Verification code sent to your email." });
   } catch (err) {
     return res.status(500).json({ success: false, message: err?.message || "Server error" });
@@ -112,7 +123,17 @@ exports.resendOtp = async (req, res) => {
     user.otpLastSentAt = new Date();
     await user.save();
 
-    await sendOtpEmail({ to: email, code: otp });
+    try {
+      await sendOtpEmail({ to: email, code: otp });
+    } catch (mailErr) {
+      // eslint-disable-next-line no-console
+      console.error("❌ OTP resend email failed:", mailErr?.message || mailErr);
+      return res.status(500).json({
+        success: false,
+        message:
+          "Unable to resend verification email. Please re-check SMTP_USER/SMTP_PASS (Gmail App Password) or use a transactional email provider.",
+      });
+    }
     return res.json({ success: true, message: "Verification code resent." });
   } catch (err) {
     return res.status(500).json({ success: false, message: err?.message || "Server error" });
@@ -219,4 +240,3 @@ exports.updateProfile = async (req, res) => {
     return res.status(500).json({ success: false, message: err?.message || "Server error" });
   }
 };
-
