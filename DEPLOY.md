@@ -7,6 +7,10 @@ Edit `backend/.env` and set:
   - `JWT_SECRET` (long random string)
   - `SMTP_USER` (your Gmail)
   - `SMTP_PASS` (Gmail *App Password* — requires 2FA)
+  - recommended on Render:
+    - `SMTP_HOST=smtp.gmail.com`
+    - `SMTP_PORT=587`
+    - `SMTP_SECURE=false`
   - optional: `SMTP_FROM`
   - optional: `OTP_TTL_MINUTES` / `OTP_RESEND_COOLDOWN_SECONDS`
 - **Firebase Admin (server-side)** (optional / backward compatible, only needed if you still use Firebase ID tokens):
