@@ -230,15 +230,18 @@ exports.login = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const user = req.user;
-    const name = String(req.body?.name || "").trim();
-    const profilePhotoUrl = String(req.body?.profilePhotoUrl || "").trim();
+    const body = req.body || {};
+    const hasName = Object.prototype.hasOwnProperty.call(body, "name");
+    const hasPhoto = Object.prototype.hasOwnProperty.call(body, "profilePhotoUrl");
+    const name = String(body?.name ?? "").trim();
+    const profilePhotoUrl = String(body?.profilePhotoUrl ?? "").trim(); // may be "" to clear
 
-    if (!name && !profilePhotoUrl) {
+    if (!hasName && !hasPhoto) {
       return res.status(400).json({ success: false, message: "Nothing to update" });
     }
 
-    if (name) user.name = name;
-    if (profilePhotoUrl) user.profilePhotoUrl = profilePhotoUrl;
+    if (hasName && name) user.name = name;
+    if (hasPhoto) user.profilePhotoUrl = profilePhotoUrl;
     await user.save();
     return res.json({
       success: true,

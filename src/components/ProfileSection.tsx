@@ -67,23 +67,51 @@ const ProfileSection = () => {
     return { total, avgWpm, avgAcc, bestWpm, delta };
   }, [sessions]);
 
+  const compressImageToDataUrl = async (file: File, maxSize = 256, quality = 0.75) => {
+    // Keep payload small so it can be saved in DB and sent via JSON safely.
+    const url = URL.createObjectURL(file);
+    try {
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const i = new Image();
+        i.onload = () => resolve(i);
+        i.onerror = reject;
+        i.src = url;
+      });
+
+      const scale = Math.min(1, maxSize / Math.max(img.width || 1, img.height || 1));
+      const w = Math.max(1, Math.round(img.width * scale));
+      const h = Math.max(1, Math.round(img.height * scale));
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Canvas not supported');
+      ctx.drawImage(img, 0, 0, w, h);
+
+      // JPEG is much smaller than PNG for photos
+      return canvas.toDataURL('image/jpeg', quality);
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  };
+
   const handlePickPhoto = async (file: File | null) => {
     if (!file) return;
     if (!file.type.startsWith('image/')) return;
 
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const dataUrl = String(reader.result || '');
+    setProfileMsg('');
+    try {
+      const dataUrl = await compressImageToDataUrl(file, 256, 0.75);
       setPhotoUrl(dataUrl);
       // Save to backend so it syncs across devices
-      try {
-        await apiPatch('/api/auth/profile', { profilePhotoUrl: dataUrl });
-        setUser((prev: any) => ({ ...(prev || {}), profilePhotoUrl: dataUrl }));
-      } catch {
-        // ignore (still show locally)
-      }
-    };
-    reader.readAsDataURL(file);
+      await apiPatch('/api/auth/profile', { profilePhotoUrl: dataUrl });
+      setUser((prev: any) => ({ ...(prev || {}), profilePhotoUrl: dataUrl }));
+      setProfileMsg('Photo updated.');
+    } catch (e: any) {
+      setProfileMsg(e?.message || 'Unable to save photo right now.');
+    } finally {
+      window.setTimeout(() => setProfileMsg(''), 2500);
+    }
   };
 
   const handleRemovePhoto = async () => {

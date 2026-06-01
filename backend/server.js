@@ -39,6 +39,8 @@ app.use(
 );
 app.use(
   express.json({
+    // Profile photo is sent as a (small) data URL. Increase default limit (100kb) so it doesn't fail silently.
+    limit: process.env.JSON_BODY_LIMIT || "5mb",
     verify: (req, res, buf) => {
       req.rawBody = buf;
     },
