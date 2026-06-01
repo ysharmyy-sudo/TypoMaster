@@ -657,10 +657,11 @@ const TypingTest = () => {
 
           {/* ── Left: Typing area ── */}
           <div>
-            <div className="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-xl border border-slate-100 mb-4 overflow-hidden">
+            <div className="bg-white p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-slate-100 mb-4 overflow-hidden">
               {/* Passage display */}
               <div
-                className="text-xl md:text-2xl leading-[1.8] mb-8 text-slate-300 font-medium relative min-h-[100px]"
+                // Keep this compact so passage + typing box are visible together (same feel as earlier UI).
+                className="text-base md:text-lg leading-[1.7] mb-5 text-slate-300 font-medium relative h-[220px] md:h-[260px] overflow-hidden"
                 style={{ fontFamily: isHindi ? 'sans-serif' : undefined }}
               >
                 {(() => {
@@ -707,7 +708,7 @@ const TypingTest = () => {
                         })}
                       </div>
                       {/* Invisible text only for layout sizing (keep box height practical) */}
-                      <div className="opacity-0">{display}</div>
+                      <div className="opacity-0 whitespace-pre-wrap">{display}</div>
                     </>
                   );
                 })()}
@@ -723,7 +724,7 @@ const TypingTest = () => {
                 autoFocus
                 lang={langOption.langTag}
                 dir={langOption.dir}
-                className="w-full h-40 p-6 bg-slate-50 border-2 border-slate-100 rounded-3xl focus:border-sky-500 focus:bg-white outline-none resize-none text-xl md:text-2xl leading-relaxed transition-all shadow-inner font-medium"
+                className="w-full h-28 md:h-32 p-4 md:p-5 bg-slate-50 border-2 border-slate-100 rounded-3xl focus:border-sky-500 focus:bg-white outline-none resize-none text-lg md:text-xl leading-relaxed transition-all shadow-inner font-medium"
                 placeholder={isHindi ? 'यहाँ टाइप करना शुरू करें...' : 'The clock starts when you type your first letter...'}
                 style={{ fontFamily: isHindi ? 'sans-serif' : undefined }}
               />
