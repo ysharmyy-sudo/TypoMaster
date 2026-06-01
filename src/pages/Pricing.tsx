@@ -2,10 +2,10 @@ import { Check, ShieldCheck } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { apiPost } from '../utils/api';
+import { apiGet, apiPost } from '../utils/api';
 
 const Pricing = () => {
-  const { setPremium, user } = useAppContext();
+  const { setPremium, user, setUser } = useAppContext();
   const navigate = useNavigate();
   const [error, setError] = useState('');
   type PaidPlanId = 'm1' | 'm3' | 'm6' | 'm12';
@@ -92,7 +92,22 @@ const Pricing = () => {
             );
             if (!v?.success) throw new Error(v?.message || 'Payment verification failed');
 
+            // Update premium state immediately
             setPremium(true);
+            // Best-effort: sync latest user from backend so profile updates instantly
+            try {
+              const me = await apiGet<{ success: boolean; user: any }>('/api/auth/me');
+              if (me?.user) {
+                setUser(me.user);
+                setPremium(!!me.user.isPremium);
+              } else if (v?.user) {
+                // fallback to partial payload
+                setUser((prev: any) => ({ ...(prev || {}), ...(v.user || {}), isPremium: true }));
+              }
+            } catch {
+              // fallback: keep local premium true
+              if (v?.user) setUser((prev: any) => ({ ...(prev || {}), ...(v.user || {}), isPremium: true }));
+            }
             navigate('/');
           } catch (err: any) {
             setError(err?.message || 'Payment verification failed. Please contact support.');
