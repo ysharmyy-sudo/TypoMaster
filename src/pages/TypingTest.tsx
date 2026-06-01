@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { PageSkeleton } from '../components/SkeletonLoader';
@@ -6,6 +6,7 @@ import { RotateCcw, Zap, AlertCircle, Keyboard, X, ExternalLink } from 'lucide-r
 import confetti from 'canvas-confetti';
 import HindiKeyboard, { type HindiLayout } from '../components/HindiKeyboard';
 import VirtualKeyboard from '../components/VirtualKeyboard';
+import { getSanscriptScheme, transliterateToSelectedLanguage } from '../utils/transliteration';
 import {
   TYPING_LANGUAGE_OPTIONS,
   type TypingLanguage,
@@ -133,7 +134,11 @@ const TypingTest = () => {
   const [durationMin, setDurationMin] = useState<DurationMin>(1);
   const [durationOptions, setDurationOptions] = useState<DurationMin[]>(DEFAULT_DURATION_OPTIONS);
   const [isFocusMode, setIsFocusMode] = useState(false);
+  // NOTE:
+  // - userInput = what we store/compare against the passage (target script)
+  // - romanBuffer = only used for phonetic transliteration typing (A-Z input -> script output)
   const [userInput, setUserInput] = useState('');
+  const [romanBuffer, setRomanBuffer] = useState('');
   const [startTime, setStartTime] = useState<number | null>(null);
   const [wpm, setWpm] = useState(0);
   const [accuracy, setAccuracy] = useState(100);
@@ -145,6 +150,13 @@ const TypingTest = () => {
   const langOption = getLanguageOption(language);
   const isHindi = language === 'hindi_inscript' || language === 'hindi_remington';
   const isNonEnglish = language !== 'english';
+  const sanscriptScheme = useMemo(() => getSanscriptScheme(language), [language]);
+
+  // Phonetic typing: convert roman input (itrans-ish) to selected script.
+  // We intentionally do NOT force this for Hindi Inscript/Remington because those are layout-based exams.
+  const phoneticEnabled = !!sanscriptScheme && !isHindi;
+
+  const isAsciiInput = (s: string) => /^[\x00-\x7F]*$/.test(s);
 
   const shuffle = <T,>(arr: T[]) => {
     const a = arr.slice();
@@ -342,6 +354,7 @@ const TypingTest = () => {
     const nextOpt = getLanguageOption(lang);
     setLanguage(lang);
     setUserInput('');
+    setRomanBuffer('');
     setStartTime(null);
     setWpm(0);
     setAccuracy(100);
@@ -413,7 +426,17 @@ const TypingTest = () => {
     if (isFinished) return;
     const value = e.target.value;
     if (!startTime && value.length > 0) handleStart();
+
+    // Normal (direct) typing path:
+    // - English: store as-is
+    // - Hindi inscript/remington: store as-is (IME/layout based)
+    // - Other languages: if user pastes/types actual script, store as-is
+    //   (phonetic mode is handled via onBeforeInput/onKeyDown to keep caret stable)
     setUserInput(value);
+    if (phoneticEnabled) {
+      // If user enters non-ascii directly (IME/virtual keyboard), drop phonetic buffer to avoid mismatch.
+      if (!isAsciiInput(value)) setRomanBuffer('');
+    }
 
     const charCount = value.length;
     let correctChars = 0;
@@ -423,6 +446,80 @@ const TypingTest = () => {
     setAccuracy(charCount === 0 ? 100 : Math.round((correctChars / charCount) * 100));
     // Never finish just because text ended; extend instead.
     extendTextIfNeeded(value.length);
+  };
+
+  const handleBeforeInput = (e: React.FormEvent<HTMLTextAreaElement> & { data?: string | null; inputType?: string }) => {
+    if (!phoneticEnabled) return;
+    if (isFinished) return;
+
+    const data = String(e.data ?? '');
+    if (!data) return;
+
+    // If user is typing actual script chars via IME/virtual keyboard, do not intercept.
+    if (!isAsciiInput(data)) {
+      setRomanBuffer('');
+      return;
+    }
+
+    // Allow common printable ASCII to be phonetic-transliterated.
+    // Prevent default so the textarea doesn't insert raw roman characters.
+    e.preventDefault?.();
+
+    const nextRoman = romanBuffer + data;
+    const nextScript = transliterateToSelectedLanguage(nextRoman, language);
+    setRomanBuffer(nextRoman);
+    if (!startTime && nextScript.length > 0) handleStart();
+    setUserInput(nextScript);
+
+    // Update accuracy + extend
+    const charCount = nextScript.length;
+    let correctChars = 0;
+    for (let i = 0; i < charCount; i++) {
+      if (nextScript[i] === text[i]) correctChars++;
+    }
+    setAccuracy(charCount === 0 ? 100 : Math.round((correctChars / charCount) * 100));
+    extendTextIfNeeded(nextScript.length);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (!phoneticEnabled) return;
+    if (isFinished) return;
+
+    // If user is in direct-script mode, don't hijack backspace.
+    if (!romanBuffer) return;
+
+    if (e.key === 'Backspace') {
+      e.preventDefault();
+      const nextRoman = romanBuffer.slice(0, -1);
+      const nextScript = transliterateToSelectedLanguage(nextRoman, language);
+      setRomanBuffer(nextRoman);
+      setUserInput(nextScript);
+
+      const charCount = nextScript.length;
+      let correctChars = 0;
+      for (let i = 0; i < charCount; i++) {
+        if (nextScript[i] === text[i]) correctChars++;
+      }
+      setAccuracy(charCount === 0 ? 100 : Math.round((correctChars / charCount) * 100));
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    if (!phoneticEnabled) return;
+    if (isFinished) return;
+    const clip = e.clipboardData?.getData('text') ?? '';
+    if (!clip) return;
+    // If paste contains non-ascii, let it go through (direct script paste).
+    if (!isAsciiInput(clip)) {
+      setRomanBuffer('');
+      return;
+    }
+    e.preventDefault();
+    const nextRoman = romanBuffer + clip;
+    const nextScript = transliterateToSelectedLanguage(nextRoman, language);
+    setRomanBuffer(nextRoman);
+    if (!startTime && nextScript.length > 0) handleStart();
+    setUserInput(nextScript);
   };
 
   // ── Finish ──
@@ -471,6 +568,7 @@ const TypingTest = () => {
   // ── Reset ──
   const resetTest = () => {
     setUserInput('');
+    setRomanBuffer('');
     setStartTime(null);
     setWpm(0);
     setAccuracy(100);
@@ -719,7 +817,9 @@ const TypingTest = () => {
                 ref={inputRef}
                 value={userInput}
                 onChange={handleInputChange}
-                onPaste={(e) => e.preventDefault()}
+                onBeforeInput={handleBeforeInput as any}
+                onKeyDown={handleKeyDown}
+                onPaste={handlePaste}
                 disabled={isFinished}
                 autoFocus
                 lang={langOption.langTag}
@@ -844,6 +944,8 @@ const TypingTest = () => {
                     // Re-use same accuracy logic: easiest is to just update input value and let effect calculate on next change
                     // We intentionally route via a synthetic event-equivalent path.
                     setUserInput(next);
+                    // Switching to direct script input (virtual keyboard), drop phonetic buffer.
+                    if (phoneticEnabled) setRomanBuffer('');
 
                     const charCount = next.length;
                     let correctChars = 0;
