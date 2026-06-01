@@ -16,6 +16,12 @@ import {
 
 // ─── Text Banks ─────────────────────────────────────────────────────────────
 
+// NOTE:
+// This project uses an in-app text bank (no API). So we must:
+// 1) Never end the test just because the text finished (time controls end).
+// 2) Keep extending the text when the user reaches the end.
+// 3) Avoid repeating the same paragraph.
+
 const ENGLISH_TEXTS: Record<string, string[]> = {
   'default': [
     "Indian Government has several competitive exams for selection of candidates for various posts in the central and state departments. Typing speed is a crucial requirement for many of these clerical and administrative roles.",
@@ -106,6 +112,7 @@ type SessionRecord = {
 };
 
 const SESSIONS_KEY = 'ptt_sessions_v1';
+const PASSAGE_STATE_KEY = 'ptt_passage_state_v1'; // per examId+language, for non-repeat passages
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -138,6 +145,139 @@ const TypingTest = () => {
   const langOption = getLanguageOption(language);
   const isHindi = language === 'hindi_inscript' || language === 'hindi_remington';
   const isNonEnglish = language !== 'english';
+
+  const shuffle = <T,>(arr: T[]) => {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+
+  const getPassageStoreKey = (lang: Language, eId: string) => `${lang}::${eId || 'default'}`;
+
+  const getNextEnglishParagraph = (eId: string) => {
+    const examKey = eId && ENGLISH_TEXTS[eId] ? eId : 'default';
+    const bank = ENGLISH_TEXTS[examKey] || ENGLISH_TEXTS.default;
+
+    // Read state
+    let stateAll: any = {};
+    try {
+      stateAll = JSON.parse(localStorage.getItem(PASSAGE_STATE_KEY) || '{}') || {};
+    } catch {
+      stateAll = {};
+    }
+
+    const storeKey = getPassageStoreKey('english', examKey);
+    const state = stateAll[storeKey] || { queue: [], lastIndex: null, dynamicCount: 0 };
+
+    // If we still have unique static paragraphs left in this cycle, use them
+    if (!Array.isArray(state.queue) || state.queue.length === 0) {
+      const indexes = bank.map((_, i) => i);
+      const filtered = typeof state.lastIndex === 'number' && bank.length > 1
+        ? indexes.filter((i) => i !== state.lastIndex)
+        : indexes;
+      state.queue = shuffle(filtered);
+    }
+
+    // If bank is tiny OR user already cycled, generate a fresh unique paragraph (never repeats)
+    // This guarantees "repeat nahi hona chahiye" even if bank is small.
+    if (!state.queue.length) {
+      state.dynamicCount = Number(state.dynamicCount || 0) + 1;
+      stateAll[storeKey] = state;
+      try {
+        localStorage.setItem(PASSAGE_STATE_KEY, JSON.stringify(stateAll));
+      } catch {
+        // ignore
+      }
+      const n = state.dynamicCount;
+      const bits = [
+        "Typing tests reward calm rhythm, correct posture, and consistent accuracy over pure speed.",
+        "Keep your eyes on the screen, not the keyboard, and let your muscle memory do the work.",
+        "A small reduction in errors can improve your effective score more than rushing for extra words.",
+        "In real exam environments, time management matters: start steady, then gradually increase pace.",
+        "Practice with punctuation, numbers, and mixed-case words to avoid surprises on test day.",
+      ];
+      const pick = shuffle(bits).slice(0, 3).join(' ');
+      return `Practice Passage #${n}: ${pick}`;
+    }
+
+    const idx = state.queue.shift();
+    state.lastIndex = idx;
+    stateAll[storeKey] = state;
+    try {
+      localStorage.setItem(PASSAGE_STATE_KEY, JSON.stringify(stateAll));
+    } catch {
+      // ignore
+    }
+
+    return bank[idx] || ENGLISH_TEXTS.default[0];
+  };
+
+  const getNextHindiParagraph = () => {
+    // Simple non-repeat cycle for Hindi bank (reshuffles after full cycle)
+    let stateAll: any = {};
+    try {
+      stateAll = JSON.parse(localStorage.getItem(PASSAGE_STATE_KEY) || '{}') || {};
+    } catch {
+      stateAll = {};
+    }
+    const storeKey = getPassageStoreKey('hindi_inscript', 'hindi');
+    const state = stateAll[storeKey] || { queue: [], lastIndex: null };
+    if (!Array.isArray(state.queue) || state.queue.length === 0) {
+      const indexes = HINDI_TEXTS.map((_, i) => i);
+      const filtered = typeof state.lastIndex === 'number' && HINDI_TEXTS.length > 1
+        ? indexes.filter((i) => i !== state.lastIndex)
+        : indexes;
+      state.queue = shuffle(filtered);
+    }
+    const idx = state.queue.shift();
+    state.lastIndex = idx;
+    stateAll[storeKey] = state;
+    try {
+      localStorage.setItem(PASSAGE_STATE_KEY, JSON.stringify(stateAll));
+    } catch {
+      // ignore
+    }
+    return HINDI_TEXTS[idx] || HINDI_TEXTS[0];
+  };
+
+  const buildInitialText = (opts: { lang: Language; eId: string; minutes: number }) => {
+    const { lang, eId, minutes } = opts;
+    // Start with ~1200 chars minimum, and roughly scale with duration.
+    // We'll extend automatically as the user reaches the end.
+    const targetChars = Math.max(1200, Math.round(minutes * 700));
+    const parts: string[] = [];
+    let total = 0;
+    while (total < targetChars) {
+      let p = '';
+      if (lang === 'english') p = getNextEnglishParagraph(eId);
+      else if (lang === 'hindi_inscript' || lang === 'hindi_remington') p = getNextHindiParagraph();
+      else p = makeDefaultPracticeText(lang);
+      parts.push(p);
+      total += p.length + 2;
+      // safety cap (avoid runaway DOM)
+      if (parts.length > 20) break;
+    }
+    return parts.join('\n\n');
+  };
+
+  const extendTextIfNeeded = (typedLen: number) => {
+    // Extend when user is close to end
+    const buffer = 120;
+    if (typedLen < 1) return;
+    if (typedLen < text.length - buffer) return;
+    if (isFinished) return;
+
+    let extra = '';
+    if (language === 'english') extra = getNextEnglishParagraph(examId);
+    else if (isHindi) extra = getNextHindiParagraph();
+    else extra = makeDefaultPracticeText(language);
+
+    if (!extra) return;
+    setText((prev) => `${prev}\n\n${extra}`);
+  };
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -179,19 +319,18 @@ const TypingTest = () => {
       });
     }
 
-    // Default = English (same behaviour as earlier)
-    let selectedText = '';
+    // Default = English
+    // IMPORTANT: don't finish test when text ends; we extend as needed.
+    // Also avoid repeating the same paragraph.
     if (gameId) {
-      selectedText = "The game mode is active. Focus on every character to master the speed challenge!";
-    } else if (eId && ENGLISH_TEXTS[eId]) {
-      const texts = ENGLISH_TEXTS[eId];
-      selectedText = texts[Math.floor(Math.random() * texts.length)];
+      setText(
+        buildInitialText({ lang: 'english', eId: 'default', minutes: chosen }) +
+          '\n\n' +
+          'Game mode is active. Focus on every character to master the speed challenge!'
+      );
     } else {
-      const texts = ENGLISH_TEXTS['default'];
-      selectedText = texts[Math.floor(Math.random() * texts.length)];
+      setText(buildInitialText({ lang: 'english', eId, minutes: chosen }));
     }
-
-    setText(selectedText || ENGLISH_TEXTS['default'][0]);
     const timer = setTimeout(() => setLoading(false), 300);
     return () => clearTimeout(timer);
   }, []);
@@ -211,8 +350,7 @@ const TypingTest = () => {
     // Update title for non-english languages (helps users confirm selection)
     if (lang === 'english') {
       setExamTitle('Standard Practice');
-      const texts = ENGLISH_TEXTS['default'];
-      setText(texts[Math.floor(Math.random() * texts.length)]);
+      setText(buildInitialText({ lang: 'english', eId: 'default', minutes: durationMin }));
       setShowKeyboard(false);
     } else {
       setExamTitle(`${nextOpt.label} Practice`);
@@ -220,10 +358,10 @@ const TypingTest = () => {
       setShowKeyboard(true);
 
       if (lang === 'hindi_inscript' || lang === 'hindi_remington') {
-        setText(HINDI_TEXTS[Math.floor(Math.random() * HINDI_TEXTS.length)]);
+        setText(buildInitialText({ lang, eId: 'hindi', minutes: durationMin }));
         setHindiLayout(lang === 'hindi_inscript' ? 'inscript' : 'remington');
       } else {
-        setText(makeDefaultPracticeText(lang));
+        setText(buildInitialText({ lang, eId: 'default', minutes: durationMin }));
       }
     }
   };
@@ -281,7 +419,8 @@ const TypingTest = () => {
       if (value[i] === text[i]) correctChars++;
     }
     setAccuracy(charCount === 0 ? 100 : Math.round((correctChars / charCount) * 100));
-    if (value === text || value.length >= text.length) handleFinish();
+    // Never finish just because text ended; extend instead.
+    extendTextIfNeeded(value.length);
   };
 
   // ── Finish ──
@@ -338,14 +477,12 @@ const TypingTest = () => {
     setTrialError(false);
 
     if (language === 'english') {
-      const keys = Object.keys(ENGLISH_TEXTS);
-      const randomKey = keys[Math.floor(Math.random() * keys.length)];
-      const texts = ENGLISH_TEXTS[randomKey];
-      setText(texts[Math.floor(Math.random() * texts.length)]);
+      // Keep same exam context and pick a non-repeating passage
+      setText(buildInitialText({ lang: 'english', eId: examId, minutes: durationMin }));
     } else if (isHindi) {
-      setText(HINDI_TEXTS[Math.floor(Math.random() * HINDI_TEXTS.length)]);
+      setText(buildInitialText({ lang: language, eId: 'hindi', minutes: durationMin }));
     } else {
-      setText(makeDefaultPracticeText(language));
+      setText(buildInitialText({ lang: language, eId: 'default', minutes: durationMin }));
     }
   };
 
@@ -441,17 +578,11 @@ const TypingTest = () => {
 
                 // Refresh passage (keeps same exam context)
                 if (language === 'english') {
-                  if (examId && ENGLISH_TEXTS[examId]) {
-                    const texts = ENGLISH_TEXTS[examId];
-                    setText(texts[Math.floor(Math.random() * texts.length)]);
-                  } else {
-                    const texts = ENGLISH_TEXTS['default'];
-                    setText(texts[Math.floor(Math.random() * texts.length)]);
-                  }
+                  setText(buildInitialText({ lang: 'english', eId: examId, minutes: next }));
                 } else if (isHindi) {
-                  setText(HINDI_TEXTS[Math.floor(Math.random() * HINDI_TEXTS.length)]);
+                  setText(buildInitialText({ lang: language, eId: 'hindi', minutes: next }));
                 } else {
-                  setText(makeDefaultPracticeText(language));
+                  setText(buildInitialText({ lang: language, eId: 'default', minutes: next }));
                 }
               }}
               className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent outline-none font-bold text-slate-800"
@@ -531,7 +662,11 @@ const TypingTest = () => {
                 style={{ fontFamily: isHindi ? 'sans-serif' : undefined }}
               >
                 <div className="absolute inset-0 pointer-events-none z-10">
-                  {text.split('').map((char, index) => {
+                  {(() => {
+                    // Render window: avoid rendering extremely large passages as thousands of spans.
+                    const renderTo = Math.min(text.length, Math.max(2000, userInput.length + 2000));
+                    const display = text.slice(0, renderTo);
+                    return display.split('').map((char, index) => {
                     let color = 'text-slate-300';
                     let underline = '';
                     if (index === userInput.length && !isFinished) {
@@ -547,7 +682,8 @@ const TypingTest = () => {
                         {char}
                       </span>
                     );
-                  })}
+                    });
+                  })()}
                 </div>
                 <div className="opacity-0">{text}</div>
               </div>
@@ -691,7 +827,7 @@ const TypingTest = () => {
                     setAccuracy(charCount === 0 ? 100 : Math.round((correctChars / charCount) * 100));
 
                     if (!startTime && next.length > 0) handleStart();
-                    if (next === text || next.length >= text.length) handleFinish();
+                    extendTextIfNeeded(next.length);
                   }}
                   textareaRef={inputRef}
                   layout={getVirtualKeyboardLayout(language)}
