@@ -178,6 +178,7 @@ exports.verifyOtp = async (req, res) => {
         email: user.email,
         phone: user.phone,
         emailVerified: !!user.emailVerified,
+        profilePhotoUrl: user.profilePhotoUrl || "",
         isPremium: !!user.isPremium,
         premiumPlan: user.premiumPlan || "",
         premiumUntil: user.premiumUntil,
@@ -214,6 +215,7 @@ exports.login = async (req, res) => {
         email: user.email,
         phone: user.phone,
         emailVerified: !!user.emailVerified,
+        profilePhotoUrl: user.profilePhotoUrl || "",
         isPremium: !!user.isPremium,
         premiumPlan: user.premiumPlan || "",
         premiumUntil: user.premiumUntil,
@@ -229,10 +231,26 @@ exports.updateProfile = async (req, res) => {
   try {
     const user = req.user;
     const name = String(req.body?.name || "").trim();
-    if (!name) return res.status(400).json({ success: false, message: "Name is required" });
-    user.name = name;
+    const profilePhotoUrl = String(req.body?.profilePhotoUrl || "").trim();
+
+    if (!name && !profilePhotoUrl) {
+      return res.status(400).json({ success: false, message: "Nothing to update" });
+    }
+
+    if (name) user.name = name;
+    if (profilePhotoUrl) user.profilePhotoUrl = profilePhotoUrl;
     await user.save();
-    return res.json({ success: true, user: { id: user._id, name: user.name, email: user.email } });
+    return res.json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone || "",
+        profilePhotoUrl: user.profilePhotoUrl || "",
+        isPremium: !!user.isPremium,
+      },
+    });
   } catch (err) {
     return res.status(500).json({ success: false, message: err?.message || "Server error" });
   }

@@ -7,6 +7,7 @@ import confetti from 'canvas-confetti';
 import HindiKeyboard, { type HindiLayout } from '../components/HindiKeyboard';
 import VirtualKeyboard from '../components/VirtualKeyboard';
 import { getSanscriptScheme, transliterateToSelectedLanguage } from '../utils/transliteration';
+import { apiPost } from '../utils/api';
 import {
   TYPING_LANGUAGE_OPTIONS,
   type TypingLanguage,
@@ -114,6 +115,7 @@ type SessionRecord = {
 
 const SESSIONS_KEY = 'ptt_sessions_v1';
 const PASSAGE_STATE_KEY = 'ptt_passage_state_v1'; // per examId+language, for non-repeat passages
+const SESSIONS_MIGRATED_KEY = 'ptt_sessions_migrated_v1';
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -166,6 +168,36 @@ const TypingTest = () => {
     }
     return a;
   };
+
+  // One-time: migrate old local sessions to backend after login (best-effort)
+  useEffect(() => {
+    try {
+      const token = localStorage.getItem('ptt_token') || '';
+      const migrated = localStorage.getItem(SESSIONS_MIGRATED_KEY) === 'true';
+      if (!token || migrated) return;
+      const raw = localStorage.getItem(SESSIONS_KEY);
+      const prev = raw ? (JSON.parse(raw) as SessionRecord[]) : [];
+      if (!Array.isArray(prev) || prev.length === 0) {
+        localStorage.setItem(SESSIONS_MIGRATED_KEY, 'true');
+        return;
+      }
+
+      void (async () => {
+        try {
+          // send last 200 only (avoid huge upload)
+          const batch = prev.slice(-200);
+          for (const s of batch) {
+            await apiPost('/api/sessions', s);
+          }
+          localStorage.setItem(SESSIONS_MIGRATED_KEY, 'true');
+        } catch {
+          // keep it for later
+        }
+      })();
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const getPassageStoreKey = (lang: Language, eId: string) => `${lang}::${eId || 'default'}`;
 
@@ -560,6 +592,26 @@ const TypingTest = () => {
     } catch {
       // ignore
     }
+
+    // Save session to backend (for cross-device sync)
+    void (async () => {
+      try {
+        await apiPost('/api/sessions', {
+          ts: now,
+          examId: examId || 'default',
+          examTitle: examTitle || 'Typing Test',
+          durationMin: Number(durationMin || 1),
+          language,
+          wpm: finalWpm,
+          accuracy,
+          typedChars,
+          correctChars,
+          errorCount: errors,
+        });
+      } catch {
+        // ignore network errors; local storage still has it
+      }
+    })();
 
     setIsFinished(true);
     confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#0ea5e9', '#ffffff', '#000000'] });

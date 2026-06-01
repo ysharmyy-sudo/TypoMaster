@@ -9,6 +9,7 @@ require("dotenv").config();
 // 🔥 Routes import
 const paymentRoutes = require("./routes/payment");
 const authRoutes = require("./routes/auth");
+const sessionsRoutes = require("./routes/sessions");
 
 // 🔥 DB connect
 const connectDB = require("./config/db");
@@ -54,6 +55,7 @@ app.use("/api/payment", paymentRoutes);
 // Backward/forward compatible alias (some frontends expect plural)
 app.use("/api/payments", paymentRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/sessions", sessionsRoutes);
 
 // ❌ Not Found Route (optional but pro)
 app.use((req, res) => {

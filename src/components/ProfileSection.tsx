@@ -16,7 +16,6 @@ type Session = {
 };
 
 const STORAGE_KEY = 'ptt_sessions_v1';
-const PROFILE_PHOTO_KEY = 'ptt_profilePhoto_v1';
 
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
 
@@ -25,13 +24,7 @@ const ProfileSection = () => {
   const navigate = useNavigate();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [displayName, setDisplayName] = useState<string>(user?.name || '');
-  const [photoUrl, setPhotoUrl] = useState<string>(() => {
-    try {
-      return localStorage.getItem(PROFILE_PHOTO_KEY) || '';
-    } catch {
-      return '';
-    }
-  });
+  const [photoUrl, setPhotoUrl] = useState<string>(user?.profilePhotoUrl || '');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileMsg, setProfileMsg] = useState<string>('');
 
@@ -48,6 +41,10 @@ const ProfileSection = () => {
   useEffect(() => {
     setDisplayName(user?.name || '');
   }, [user?.name]);
+
+  useEffect(() => {
+    setPhotoUrl(user?.profilePhotoUrl || '');
+  }, [user?.profilePhotoUrl]);
 
   const summary = useMemo(() => {
     const now = Date.now();
@@ -78,13 +75,13 @@ const ProfileSection = () => {
     reader.onload = async () => {
       const dataUrl = String(reader.result || '');
       setPhotoUrl(dataUrl);
+      // Save to backend so it syncs across devices
       try {
-        localStorage.setItem(PROFILE_PHOTO_KEY, dataUrl);
+        await apiPatch('/api/auth/profile', { profilePhotoUrl: dataUrl });
+        setUser((prev: any) => ({ ...(prev || {}), profilePhotoUrl: dataUrl }));
       } catch {
-        // ignore
+        // ignore (still show locally)
       }
-
-      // Note: photo is stored locally (no backend upload in this project yet)
     };
     reader.readAsDataURL(file);
   };
@@ -92,7 +89,8 @@ const ProfileSection = () => {
   const handleRemovePhoto = async () => {
     setPhotoUrl('');
     try {
-      localStorage.removeItem(PROFILE_PHOTO_KEY);
+      await apiPatch('/api/auth/profile', { profilePhotoUrl: '' });
+      setUser((prev: any) => ({ ...(prev || {}), profilePhotoUrl: '' }));
     } catch {
       // ignore
     }

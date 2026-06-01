@@ -52,11 +52,13 @@ exports.me = async (req, res) => {
         id: u._id,
         name: u.name,
         email: u.email,
+        phone: u.phone || "",
         firebaseUID: u.firebaseUID || "",
         isPremium: u.isPremium,
         premiumPlan: u.premiumPlan || "",
         premiumUntil: u.premiumUntil,
         emailVerified: !!u.emailVerified,
+        profilePhotoUrl: u.profilePhotoUrl || "",
       },
     });
   } catch (err) {

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, BarChart3, CalendarDays, TrendingUp } from 'lucide-react';
+import { apiGet } from '../utils/api';
 
 type Session = {
   ts: number; // epoch ms
@@ -28,13 +29,25 @@ const Analytics = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      const parsed = raw ? (JSON.parse(raw) as Session[]) : [];
-      if (Array.isArray(parsed)) setSessions(parsed);
-    } catch {
-      setSessions([]);
-    }
+    // Prefer backend (cross-device), fallback to localStorage (offline)
+    void (async () => {
+      try {
+        const res = await apiGet<{ success: boolean; sessions: Session[] }>('/api/sessions?days=30&limit=2000');
+        if (res?.sessions && Array.isArray(res.sessions)) {
+          setSessions(res.sessions);
+          return;
+        }
+      } catch {
+        // fallback to local
+      }
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const parsed = raw ? (JSON.parse(raw) as Session[]) : [];
+        if (Array.isArray(parsed)) setSessions(parsed);
+      } catch {
+        setSessions([]);
+      }
+    })();
   }, []);
 
   const last30 = useMemo(() => {
@@ -244,4 +257,3 @@ const Analytics = () => {
 };
 
 export default Analytics;
-

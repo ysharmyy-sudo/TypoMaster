@@ -17,6 +17,9 @@ const userSchema = new mongoose.Schema({
   email: { type: String, index: true, lowercase: true, trim: true, default: "" },
   emailVerified: { type: Boolean, default: false },
 
+  // Profile photo (stored as URL or data URL; keep small in production)
+  profilePhotoUrl: { type: String, default: "" },
+
   // Firebase auth (optional / backward compatible)
   firebaseUID: { type: String, unique: true, sparse: true },
 
