@@ -245,9 +245,11 @@ const TypingTest = () => {
 
   const buildInitialText = (opts: { lang: Language; eId: string; minutes: number }) => {
     const { lang, eId, minutes } = opts;
-    // Start with ~1200 chars minimum, and roughly scale with duration.
-    // We'll extend automatically as the user reaches the end.
-    const targetChars = Math.max(1200, Math.round(minutes * 700));
+    // IMPORTANT (UI/UX):
+    // Keep the on-screen passage box practical (same feel as before).
+    // We only preload a small amount and then auto-extend when the user reaches the end.
+    // (Timer controls end, not passage length.)
+    const targetChars = Math.max(550, Math.round(Math.min(minutes, 5) * 140));
     const parts: string[] = [];
     let total = 0;
     while (total < targetChars) {
@@ -258,7 +260,7 @@ const TypingTest = () => {
       parts.push(p);
       total += p.length + 2;
       // safety cap (avoid runaway DOM)
-      if (parts.length > 20) break;
+      if (parts.length > 4) break;
     }
     return parts.join('\n\n');
   };
@@ -661,31 +663,54 @@ const TypingTest = () => {
                 className="text-xl md:text-2xl leading-[1.8] mb-8 text-slate-300 font-medium relative min-h-[100px]"
                 style={{ fontFamily: isHindi ? 'sans-serif' : undefined }}
               >
-                <div className="absolute inset-0 pointer-events-none z-10">
-                  {(() => {
-                    // Render window: avoid rendering extremely large passages as thousands of spans.
-                    const renderTo = Math.min(text.length, Math.max(2000, userInput.length + 2000));
-                    const display = text.slice(0, renderTo);
-                    return display.split('').map((char, index) => {
-                    let color = 'text-slate-300';
-                    let underline = '';
-                    if (index === userInput.length && !isFinished) {
-                      underline = 'border-b-4 border-sky-500 animate-pulse';
-                    }
-                    if (index < userInput.length) {
-                      color = userInput[index] === char
-                        ? 'text-slate-900'
-                        : 'text-red-600 bg-red-100 rounded-sm';
-                    }
-                    return (
-                      <span key={index} className={`${color} ${underline} transition-all duration-75`}>
-                        {char}
-                      </span>
-                    );
-                    });
-                  })()}
-                </div>
-                <div className="opacity-0">{text}</div>
+                {(() => {
+                  /**
+                   * UI/UX: Keep the passage box practical.
+                   * Show only a "window" of text around the cursor.
+                   * When user finishes what's visible, the next part becomes visible automatically.
+                   */
+                  const cursor = userInput.length;
+                  const WINDOW_BEFORE = 60;
+                  const WINDOW_SIZE = 950;
+                  let start = Math.max(0, cursor - WINDOW_BEFORE);
+
+                  // try not to start in the middle of a word (for English)
+                  if (!isHindi && language === 'english' && start > 0) {
+                    const prevSpace = text.lastIndexOf(' ', start);
+                    if (prevSpace > 0 && start - prevSpace < 40) start = prevSpace + 1;
+                  }
+
+                  const end = Math.min(text.length, start + WINDOW_SIZE);
+                  const display = text.slice(start, end);
+
+                  return (
+                    <>
+                      <div className="absolute inset-0 pointer-events-none z-10">
+                        {display.split('').map((char, localIdx) => {
+                          const globalIdx = start + localIdx;
+                          let color = 'text-slate-300';
+                          let underline = '';
+                          if (globalIdx === cursor && !isFinished) {
+                            underline = 'border-b-4 border-sky-500 animate-pulse';
+                          }
+                          if (globalIdx < cursor) {
+                            color =
+                              userInput[globalIdx] === char
+                                ? 'text-slate-900'
+                                : 'text-red-600 bg-red-100 rounded-sm';
+                          }
+                          return (
+                            <span key={globalIdx} className={`${color} ${underline} transition-all duration-75`}>
+                              {char}
+                            </span>
+                          );
+                        })}
+                      </div>
+                      {/* Invisible text only for layout sizing (keep box height practical) */}
+                      <div className="opacity-0">{display}</div>
+                    </>
+                  );
+                })()}
               </div>
 
               {/* Textarea */}
